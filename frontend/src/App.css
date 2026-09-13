@@ -1,0 +1,86 @@
+/**
+ * =====================================================================
+ *  Aurora 2.0 — design-system companion sheet
+ *  Aligned with frontend/src/index.css (the live theme).
+ *
+ *  NOTE: App.css is not imported by the current React entry point.
+ *  Keep it as a reference for the token set, motion library and the
+ *  optional utility classes a future TSX revision can adopt.
+ *  =====================================================================
+ */
+
+/* ---------- Typography tokens ---------- */
+:root {
+  --font-display: "Manrope", "Inter", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Inter", "Segoe UI", system-ui, sans-serif;
+  --font-code: "JetBrains Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
+}
+
+/* ---------- Utility classes ---------- */
+
+/* Glass panel */
+.glass-panel {
+  background: linear-gradient(155deg, var(--panel-bg), rgba(9, 12, 28, 0.42));
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md), 0 0 28px rgba(124, 92, 255, 0.14);
+  backdrop-filter: blur(10px);
+  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.3s, border-color 0.3s;
+  animation: pop-in 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.glass-panel:hover {
+  transform: translateY(-2px);
+  border-color: rgba(143, 107, 255, 0.6);
+  box-shadow: var(--shadow-md), 0 0 36px rgba(124, 92, 255, 0.26);
+}
+
+/* Animated aurora sheen overlay (pair with position: relative) */
+.gradient-frame::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(
+    120deg,
+    rgba(143, 107, 255, 0.16),
+    rgba(34, 211, 238, 0.1),
+    rgba(255, 95, 162, 0.08),
+    rgba(143, 107, 255, 0.14)
+  );
+  background-size: 300% 100%;
+  animation: hr-flow 9s linear infinite;
+}
+
+/* Pulsing status pill */
+.status-pill {
+  display: inline-block;
+  padding: 8px 18px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(124, 92, 255, 0.14), rgba(34, 211, 238, 0.08));
+  border: 1px solid rgba(124, 92, 255, 0.35);
+  animation: pill-pulse 2.6s ease-in-out infinite, pop-in 0.4s ease both;
+}
+
+/* Magnetic button */
+.magnetic {
+  transition: transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.25s;
+}
+.magnetic:hover {
+  transform: translateY(-2px);
+}
+
+/* Staggered reveal (apply to nth children) */
+.stagger > * {
+  animation: fade-up 0.5s ease both;
+}
+.stagger > *:nth-child(2) {
+  animation-delay: 0.08s;
+}
+.stagger > *:nth-child(3) {
+  animation-delay: 0.16s;
+}
+.stagger > *:nth-child(4) {
+  animation-delay: 0.24s;
+}
