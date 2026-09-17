@@ -1,0 +1,55 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>probe</title></head>
+<body>
+<script>
+(async () => {
+  const email = "__probe_" + Date.now() + "@example.com";
+  const username = "probe_user_" + Math.floor(Date.now() % 100000);
+  const pass = "ProbePass123!";
+  const base = "http://127.0.0.1:8000";
+  let token = null;
+  try {
+    const s = await fetch(base + "/auth/signup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, email, password: pass })
+    });
+    if (s.ok) {
+      const l = await fetch(base + "/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password: pass })
+      });
+      const ld = await l.json();
+      token = ld.access_token;
+    }
+  } catch (e) {}
+  if (!token) {
+    try {
+      const l = await fetch(base + "/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password: pass })
+      });
+      const ld = await l.json();
+      token = ld.access_token;
+    } catch (e) {}
+  }
+  if (token) {
+    localStorage.setItem("token", token);
+    try {
+      await fetch(base + "/projects/?name=Probe+Project&description=probe", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + token
+        }
+      });
+    } catch (e) {}
+  }
+  location.replace("/");
+})();
+</script>
+</body>
+</html>

@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 from zipfile import ZipFile, BadZipFile
 from io import BytesIO
@@ -12,8 +12,10 @@ from models.project import Project
 from models.code_relationship import CodeRelationship
 
 from services.chunking import split_code_into_chunks
-from services.embedding_service import EMBEDDING_MODEL, create_embedding
+from services.embedding_service import EMBEDDING_MODEL, create_embedding, create_embeddings
 from services.import_analyzer import find_imports
+from services.auth_dependency import get_current_user
+from models.user import User
 
 
 router = APIRouter(prefix="/files", tags=["Files"])
@@ -30,9 +32,9 @@ MAX_FILE_SIZE = 2 * 1024 * 1024       # 2 MB per file
 
 
 class CodeFileCreate(BaseModel):
-    project_id: int
-    file_path: str
-    content: str
+    project_id: int = Field(gt=0)
+    file_path: str = Field(min_length=1, max_length=500)
+    content: str = Field(max_length=2 * 1024 * 1024)
 
 
 def get_db():
@@ -163,11 +165,15 @@ def create_relationships(
 @router.post("/")
 def create_code_file(
     file_data: CodeFileCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     project = (
         db.query(Project)
-        .filter(Project.id == file_data.project_id)
+        .filter(
+            Project.id == file_data.project_id,
+            Project.user_id == current_user.id
+        )
         .first()
     )
 
@@ -177,10 +183,36 @@ def create_code_file(
             detail="Project not found"
         )
 
-    if not file_data.file_path.strip():
+    normalized_file_path = file_data.file_path.strip().replace("\\", "/")
+
+    if not normalized_file_path:
         raise HTTPException(
             status_code=400,
             detail="File path cannot be empty"
+        )
+
+    if not is_safe_zip_path(normalized_file_path):
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid file path"
+        )
+
+    if normalized_file_path.startswith("./"):
+        normalized_file_path = normalized_file_path[2:]
+
+    duplicate_file = (
+        db.query(CodeFile)
+        .filter(
+            CodeFile.project_id == file_data.project_id,
+            CodeFile.file_path == normalized_file_path
+        )
+        .first()
+    )
+
+    if duplicate_file:
+        raise HTTPException(
+            status_code=409,
+            detail="A file with this path already exists in this project"
         )
 
     if len(file_data.content.encode("utf-8")) > MAX_FILE_SIZE:
@@ -192,7 +224,7 @@ def create_code_file(
     try:
         code_file = CodeFile(
             project_id=file_data.project_id,
-            file_path=file_data.file_path.strip(),
+            file_path=normalized_file_path,
             content=file_data.content
         )
 
@@ -203,23 +235,34 @@ def create_code_file(
             file_data.content
         )
 
-        for chunk in chunks:
-            embedding = create_embedding(
-                chunk["content"]
+        # Create embeddings in small batches to reduce Gemini API requests.
+        BATCH_SIZE = 10
+
+        for batch_start in range(0, len(chunks), BATCH_SIZE):
+            batch = chunks[
+                batch_start:batch_start + BATCH_SIZE
+            ]
+
+            embeddings = create_embeddings(
+                [chunk["content"] for chunk in batch]
             )
 
-            code_chunk = CodeChunk(
-                project_id=file_data.project_id,
-                file_id=code_file.id,
-                content=chunk["content"],
-                chunk_index=chunk["chunk_index"],
-                start_line=chunk["start_line"],
-                end_line=chunk["end_line"],
-                embedding=embedding,
-                embedding_model=EMBEDDING_MODEL
-            )
+            for chunk, embedding in zip(
+                batch,
+                embeddings
+            ):
+                code_chunk = CodeChunk(
+                    project_id=file_data.project_id,
+                    file_id=code_file.id,
+                    content=chunk["content"],
+                    chunk_index=chunk["chunk_index"],
+                    start_line=chunk["start_line"],
+                    end_line=chunk["end_line"],
+                    embedding=embedding,
+                    embedding_model=EMBEDDING_MODEL
+                )
 
-            db.add(code_chunk)
+                db.add(code_chunk)
 
         db.commit()
         db.refresh(code_file)
@@ -247,43 +290,24 @@ def create_code_file(
 # Upload complete project ZIP
 # =========================================================
 
-@router.post("/upload-zip/{project_id}")
-async def upload_project_zip(
+def process_zip_data(
     project_id: int,
-    file: UploadFile = File(...),
-    db: Session = Depends(get_db)
+    zip_data: bytes,
+    db: Session
 ):
-    project = (
-        db.query(Project)
-        .filter(Project.id == project_id)
-        .first()
-    )
+    """
+    Validate and index ZIP data into an existing project.
 
-    if not project:
-        raise HTTPException(
-            status_code=404,
-            detail="Project not found"
-        )
+    This function is shared by normal ZIP uploads and GitHub imports.
+    """
 
-    if not file.filename or not file.filename.lower().endswith(".zip"):
+    if len(zip_data) > MAX_ZIP_SIZE:
         raise HTTPException(
-            status_code=400,
-            detail="Please upload a ZIP file"
+            status_code=413,
+            detail="ZIP file is too large. Maximum size is 25 MB."
         )
 
     try:
-        # -----------------------------------------------------
-        # Read ZIP
-        # -----------------------------------------------------
-
-        zip_data = await file.read()
-
-        if len(zip_data) > MAX_ZIP_SIZE:
-            raise HTTPException(
-                status_code=413,
-                detail="ZIP file is too large. Maximum size is 25 MB."
-            )
-
         # -----------------------------------------------------
         # Validate ZIP before changing the database
         # -----------------------------------------------------
@@ -456,24 +480,41 @@ async def upload_project_zip(
                 content
             )
 
-            for chunk in chunks:
-                embedding = create_embedding(
-                    chunk["content"]
+            # Create embeddings in batches to reduce Gemini API requests.
+            BATCH_SIZE = 10
+
+            for batch_start in range(0, len(chunks), BATCH_SIZE):
+                batch = chunks[
+                    batch_start:batch_start + BATCH_SIZE
+                ]
+
+                print(
+                    f"Embedding {file_path}: "
+                    f"chunks {batch_start + 1}-"
+                    f"{batch_start + len(batch)}"
                 )
 
-                code_chunk = CodeChunk(
-                    project_id=project_id,
-                    file_id=code_file.id,
-                    content=chunk["content"],
-                    chunk_index=chunk["chunk_index"],
-                    start_line=chunk["start_line"],
-                    end_line=chunk["end_line"],
-                    embedding=embedding,
-                    embedding_model=EMBEDDING_MODEL
+                embeddings = create_embeddings(
+                    [chunk["content"] for chunk in batch]
                 )
 
-                db.add(code_chunk)
-                chunks_created += 1
+                for chunk, embedding in zip(
+                    batch,
+                    embeddings
+                ):
+                    code_chunk = CodeChunk(
+                        project_id=project_id,
+                        file_id=code_file.id,
+                        content=chunk["content"],
+                        chunk_index=chunk["chunk_index"],
+                        start_line=chunk["start_line"],
+                        end_line=chunk["end_line"],
+                        embedding=embedding,
+                        embedding_model=EMBEDDING_MODEL
+                    )
+
+                    db.add(code_chunk)
+                    chunks_created += 1
 
             saved_files.append(code_file)
             files_processed += 1
@@ -524,18 +565,71 @@ async def upload_project_zip(
         )
 
 
+@router.post("/upload-zip/{project_id}")
+async def upload_project_zip(
+    project_id: int,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    project = (
+        db.query(Project)
+        .filter(
+            Project.id == project_id,
+            Project.user_id == current_user.id
+        )
+        .first()
+    )
+
+    if not project:
+        raise HTTPException(
+            status_code=404,
+            detail="Project not found"
+        )
+
+    if not file.filename or not file.filename.lower().endswith(".zip"):
+        raise HTTPException(
+            status_code=400,
+            detail="Please upload a ZIP file"
+        )
+
+    try:
+        zip_data = await file.read()
+
+        return process_zip_data(
+            project_id=project_id,
+            zip_data=zip_data,
+            db=db
+        )
+
+    except HTTPException:
+        raise
+
+    except Exception as error:
+        db.rollback()
+
+        raise HTTPException(
+            status_code=500,
+            detail=f"Could not process ZIP file: {str(error)}"
+        )
+
+
 # =========================================================
-# Get project files
+# Get project file metadata
 # =========================================================
 
 @router.get("/project/{project_id}")
 def get_project_files(
     project_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     project = (
         db.query(Project)
-        .filter(Project.id == project_id)
+        .filter(
+            Project.id == project_id,
+            Project.user_id == current_user.id
+        )
         .first()
     )
 
@@ -548,7 +642,67 @@ def get_project_files(
     files = (
         db.query(CodeFile)
         .filter(CodeFile.project_id == project_id)
+        .order_by(CodeFile.file_path)
         .all()
     )
 
-    return files
+    # Do not send full source code when loading the project tree.
+    return [
+        {
+            "id": code_file.id,
+            "project_id": code_file.project_id,
+            "file_path": code_file.file_path,
+            "created_at": code_file.created_at
+        }
+        for code_file in files
+    ]
+
+
+# =========================================================
+# Get one file's source code
+# =========================================================
+
+@router.get("/project/{project_id}/file/{file_id}")
+def get_project_file(
+    project_id: int,
+    file_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    project = (
+        db.query(Project)
+        .filter(
+            Project.id == project_id,
+            Project.user_id == current_user.id
+        )
+        .first()
+    )
+
+    if not project:
+        raise HTTPException(
+            status_code=404,
+            detail="Project not found"
+        )
+
+    code_file = (
+        db.query(CodeFile)
+        .filter(
+            CodeFile.id == file_id,
+            CodeFile.project_id == project_id
+        )
+        .first()
+    )
+
+    if not code_file:
+        raise HTTPException(
+            status_code=404,
+            detail="Code file not found"
+        )
+
+    return {
+        "id": code_file.id,
+        "project_id": code_file.project_id,
+        "file_path": code_file.file_path,
+        "content": code_file.content,
+        "created_at": code_file.created_at
+    }

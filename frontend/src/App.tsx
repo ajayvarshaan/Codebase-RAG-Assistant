@@ -1,8 +1,22 @@
 import React, { useEffect, useState, type FormEvent } from "react";
+import Chat from "./components/Chat";
 import ReactMarkdown from "react-markdown";
+import TestRunnerPanel from "./components/TestRunnerPanel";
+import Auth from "./components/Auth";
+import "./components/Projects.css";
+import {
+  getCurrentUser,
+  logout,
+  getAuthHeaders,
+  type User
+} from "./api/auth";
 
 import { askQuestion } from "./api/chat";
-
+import { apiFetch } from "./api/apiFetch";
+import {
+  importGithubRepository,
+  reimportGithubRepository
+} from "./api/github";
 import {
   getProjectRelationships,
   type Relationship
@@ -11,6 +25,15 @@ type Project = {
   id: number;
   name: string;
   description: string;
+  github_url?: string | null;
+  github_commit_sha?: string | null;
+  github_previous_commit_sha?: string | null;
+};
+
+type GithubChangedFiles = {
+  added: string[];
+  modified: string[];
+  deleted: string[];
 };
 
 
@@ -77,16 +100,6 @@ type ReadmeResponse = {
   readme: string;
 };
 
-type TestRunResponse = {
-  success: boolean;
-  passed: number;
-  failed: number;
-  skipped: number;
-  total: number;
-  duration_seconds: number;
-  output: string;
-};
-
 
 type FileTreeFolder = {
   name: string;
@@ -94,6 +107,27 @@ type FileTreeFolder = {
   folders: FileTreeFolder[];
   files: CodeFile[];
 };
+
+
+const API_BASE_URL = "http://127.0.0.1:8000";
+
+async function authapiFetch(
+  input: RequestInfo | URL,
+  init: RequestInit = {}
+): Promise<Response> {
+  const headers = new Headers(init.headers);
+  const authHeaders = new Headers(getAuthHeaders());
+  const authorization = authHeaders.get("Authorization");
+
+  if (authorization) {
+    headers.set("Authorization", authorization);
+  }
+
+  return apiFetch(input, {
+    ...init,
+    headers
+  });
+}
 
 
 function buildFileTree(files: CodeFile[]): FileTreeFolder {
@@ -344,6 +378,7 @@ function FileTree({
 
 
   return (
+    
     <div
       style={{
         padding: "15px",
@@ -359,6 +394,53 @@ function FileTree({
 
 
 function App() {
+
+  // ---------------------------------------------------------
+  // Authentication
+  // ---------------------------------------------------------
+
+  const [currentUser, setCurrentUser] =
+    useState<User | null>(null);
+
+  const [authLoading, setAuthLoading] =
+    useState(true);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      setAuthLoading(false);
+      return;
+    }
+
+    getCurrentUser()
+      .then((user) => {
+        setCurrentUser(user);
+      })
+      .catch(() => {
+        logout();
+        setCurrentUser(null);
+      })
+      .finally(() => {
+        setAuthLoading(false);
+      });
+  }, []);
+
+  const handleLogin = (user: User) => {
+    setCurrentUser(user);
+  };
+
+  const handleLogout = () => {
+    logout();
+    setCurrentUser(null);
+    setProjects([]);
+    setSelectedProjectId(null);
+    setFiles([]);
+    setRelationships([]);
+    setChatHistory([]);
+    setSelectedFile(null);
+    setSelectedSource(null);
+  };
 
   // ---------------------------------------------------------
   // Projects
@@ -410,6 +492,26 @@ function App() {
 
   const [zipMessage, setZipMessage] =
     useState("");
+
+
+  // ---------------------------------------------------------
+  // GitHub import
+  // ---------------------------------------------------------
+
+  const [githubUrl, setGithubUrl] =
+    useState("");
+
+  const [githubMessage, setGithubMessage] =
+    useState("");
+
+  const [githubImporting, setGithubImporting] =
+    useState(false);
+
+  const [githubRefreshing, setGithubRefreshing] =
+    useState(false);
+
+  const [githubChangedFiles, setGithubChangedFiles] =
+    useState<GithubChangedFiles | null>(null);
 
 
   // ---------------------------------------------------------
@@ -511,6 +613,12 @@ function App() {
   const [testFile, setTestFile] =
     useState<CodeFile | null>(null);
 
+  const [generatedTestResult, setGeneratedTestResult] =
+    useState<any>(null);
+
+  const [generatedTestMessage, setGeneratedTestMessage] =
+    useState("");
+
 
   // ---------------------------------------------------------
   // AI Code Fix
@@ -584,17 +692,6 @@ function App() {
 
 
   // ---------------------------------------------------------
-  // Automated Tests
-  // ---------------------------------------------------------
-
-  const [testRun, setTestRun] =
-    useState<TestRunResponse | null>(null);
-
-  const [testRunMessage, setTestRunMessage] =
-    useState("");
-
-
-  // ---------------------------------------------------------
   // Selected source
   // ---------------------------------------------------------
 
@@ -608,8 +705,12 @@ function App() {
 
   useEffect(() => {
 
-    fetch(
-      "http://127.0.0.1:8000/projects/"
+    if (!currentUser) {
+      return;
+    }
+
+    authapiFetch(
+      `${API_BASE_URL}/projects/`
     )
       .then((response) => {
 
@@ -634,7 +735,7 @@ function App() {
         );
       });
 
-  }, []);
+  }, [currentUser]);
 
 
   // ---------------------------------------------------------
@@ -642,6 +743,10 @@ function App() {
   // ---------------------------------------------------------
 
   useEffect(() => {
+
+    if (!currentUser) {
+      return;
+    }
 
     if (selectedProjectId === null) {
 
@@ -698,9 +803,6 @@ function App() {
        setReadme("");
        setReadmeMessage("");
        setShowReadme(false);
-
-       setTestRun(null);
-       setTestRunMessage("");
 
        setSearchQuery("");
        setSearchResults([]);
@@ -792,7 +894,7 @@ function App() {
        setDiffAnalysis("");
        setDiffMessage("");
 
-  }, [selectedProjectId]);
+  }, [selectedProjectId, currentUser]);
 
 
   // ---------------------------------------------------------
@@ -810,7 +912,7 @@ function App() {
     );
 
 
-    fetch(
+    authapiFetch(
       `http://127.0.0.1:8000/files/project/${projectId}`
     )
       .then((response) => {
@@ -903,7 +1005,7 @@ function App() {
       // Get affected files
 
       const impactResponse =
-        await fetch(
+        await authapiFetch(
           `http://127.0.0.1:8000/impact/project/${selectedProjectId}/file/${file.id}`
         );
 
@@ -930,7 +1032,7 @@ function App() {
       );
 
       const explanationResponse =
-        await fetch(
+        await authapiFetch(
           `http://127.0.0.1:8000/impact-explanation/project/${selectedProjectId}/file/${file.id}`
         );
 
@@ -990,7 +1092,7 @@ function App() {
     try {
 
       const response =
-        await fetch(
+        await authapiFetch(
           `http://127.0.0.1:8000/file-explanation/project/${selectedProjectId}/file/${file.id}`
         );
 
@@ -1050,7 +1152,7 @@ function App() {
     try {
 
       const response =
-        await fetch(
+        await authapiFetch(
           `http://127.0.0.1:8000/code-review/project/${selectedProjectId}/file/${file.id}`
         );
 
@@ -1106,7 +1208,7 @@ function App() {
     try {
 
       const response =
-        await fetch(
+        await authapiFetch(
           `http://127.0.0.1:8000/test-generation/project/${selectedProjectId}/file/${file.id}`
         );
 
@@ -1141,6 +1243,71 @@ function App() {
 
 
   // ---------------------------------------------------------
+  // Run AI generated test cases
+  // ---------------------------------------------------------
+
+  const runGeneratedTestCases = async () => {
+    if (
+      selectedProjectId === null ||
+      !testCases.trim()
+    ) {
+      return;
+    }
+
+    setLoadingAction("Running AI generated test...");
+    setGeneratedTestResult(null);
+    setGeneratedTestMessage(
+      "Running AI generated test..."
+    );
+
+    try {
+      const response = await authapiFetch(
+        `http://127.0.0.1:8000/test-runner/project/${selectedProjectId}/generated`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            test_code: testCases,
+            test_file_name: "generated_ai_test.py"
+          })
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(
+          () => null
+        );
+
+        throw new Error(
+          errorData?.detail ||
+            "Could not run generated test"
+        );
+      }
+
+      const data = await response.json();
+
+      setGeneratedTestResult(data);
+      setGeneratedTestMessage("");
+    } catch (error) {
+      console.error(
+        "Failed to run generated test:",
+        error
+      );
+
+      setGeneratedTestMessage(
+        error instanceof Error
+          ? error.message
+          : "Could not run generated test."
+      );
+    } finally {
+      finishLoading();
+    }
+  };
+
+
+  // ---------------------------------------------------------
   // Generate AI code fix
   // ---------------------------------------------------------
 
@@ -1162,7 +1329,7 @@ function App() {
 
     try {
 
-      const response = await fetch(
+      const response = await authapiFetch(
         `http://127.0.0.1:8000/code-fix/project/${selectedProjectId}/file/${file.id}`
       );
 
@@ -1220,7 +1387,7 @@ function App() {
 
     try {
 
-      const response = await fetch(
+      const response = await authapiFetch(
         `http://127.0.0.1:8000/code-search/project/${selectedProjectId}?query=${encodeURIComponent(searchQuery.trim())}`
       );
 
@@ -1282,7 +1449,7 @@ function App() {
 
     try {
 
-      const response = await fetch(
+      const response = await authapiFetch(
         `http://127.0.0.1:8000/code-diff/project/${selectedProjectId}`,
         {
           method: "POST",
@@ -1341,7 +1508,7 @@ function App() {
 
     try {
 
-      const response = await fetch(
+      const response = await authapiFetch(
         `http://127.0.0.1:8000/readme/project/${selectedProjectId}`
       );
 
@@ -1394,7 +1561,7 @@ function App() {
 
     try {
 
-      const response = await fetch(
+      const response = await authapiFetch(
         `http://127.0.0.1:8000/documentation/project/${selectedProjectId}/file/${file.id}`
       );
 
@@ -1457,7 +1624,7 @@ function App() {
     try {
 
       const response =
-        await fetch(
+        await authapiFetch(
           `http://127.0.0.1:8000/architecture/project/${selectedProjectId}`
         );
 
@@ -1493,47 +1660,217 @@ function App() {
 
 
   // ---------------------------------------------------------
-  // Run automated tests
+  // Import GitHub repository
   // ---------------------------------------------------------
 
-  const runAutomatedTests = async () => {
-    setLoadingAction("Running automated tests...");
-    setTestRun(null);
-    setTestRunMessage("Running the backend test suite...");
+  const handleGithubImport = async (
+    event: FormEvent<HTMLFormElement>
+  ) => {
+
+    event.preventDefault();
+
+    if (selectedProjectId === null) {
+      setGithubMessage(
+        "Please select a project first."
+      );
+      return;
+    }
+
+    if (!githubUrl.trim()) {
+      setGithubMessage(
+        "Please enter a GitHub repository URL."
+      );
+      return;
+    }
+
+    setGithubImporting(true);
+    setGithubChangedFiles(null);
+    setLoadingAction(
+      "Importing GitHub repository..."
+    );
+    setGithubMessage(
+      "Downloading and indexing GitHub repository..."
+    );
 
     try {
-      const response = await fetch(
-        "http://127.0.0.1:8000/tests/run"
+      const data = await importGithubRepository(
+        selectedProjectId,
+        githubUrl.trim()
       );
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          data?.detail ||
-          data?.output ||
-          "Could not run automated tests."
-        );
-      }
-
-      const result: TestRunResponse = data;
-      setTestRun(result);
-      setTestRunMessage(
-        result.success
-          ? `All ${result.total} automated tests passed.`
-          : `${result.failed} test(s) failed.`
+      setGithubMessage(
+        `Successfully imported ${data.repository}. ${data.files_processed} files and ${data.chunks_created} chunks indexed.`
       );
+
+      setGithubUrl("");
+
+      // Reload files and relationships for the selected project.
+      loadProjectFiles(selectedProjectId);
+      await loadProjectRelationships(selectedProjectId);
+
+      // Clear stale project-specific results because the codebase changed.
+      setSelectedFile(null);
+      setSelectedSource(null);
+      setImpactFile(null);
+      setAffectedFiles([]);
+      setImpactMessage("");
+      setImpactExplanation("");
+      setArchitectureSummary("");
+      setArchitectureMessage("");
+      setShowArchitectureSummary(false);
+      setFileExplanation("");
+      setFileExplanationMessage("");
+      setExplanationFile(null);
+      setCodeReview("");
+      setCodeReviewMessage("");
+      setReviewFile(null);
+      setTestCases("");
+      setTestCasesMessage("");
+      setTestFile(null);
+      setCodeFix("");
+      setCodeFixMessage("");
+      setFixFile(null);
+      setDocumentation("");
+      setDocumentationMessage("");
+      setDocumentationFile(null);
+      setReadme("");
+      setReadmeMessage("");
+      setShowReadme(false);
+      setSearchResults([]);
+      setSearchMessage("");
+      setDiffAnalysis("");
+      setDiffMessage("");
+      setChatHistory([]);
+      setChatMessage("");
+
     } catch (error) {
-      console.error("Failed to run automated tests:", error);
-      setTestRunMessage(
+      console.error(
+        "GitHub import failed:",
+        error
+      );
+
+      setGithubMessage(
         error instanceof Error
           ? error.message
-          : "Could not run automated tests."
+          : "Could not import GitHub repository."
       );
     } finally {
+      setGithubImporting(false);
       finishLoading();
     }
   };
+
+
+  // ---------------------------------------------------------
+  // Refresh GitHub repository
+  // ---------------------------------------------------------
+
+  const handleGithubRefresh = async () => {
+    if (selectedProjectId === null) {
+      setGithubMessage("Please select a project first.");
+      return;
+    }
+
+    const selectedProject = projects.find(
+      (project) => project.id === selectedProjectId
+    );
+
+    if (!selectedProject?.github_url) {
+      setGithubMessage(
+        "This project does not have a saved GitHub repository."
+      );
+      return;
+    }
+
+    setGithubRefreshing(true);
+    setGithubChangedFiles(null);
+    setLoadingAction("Refreshing GitHub repository...");
+    setGithubMessage(
+      "Downloading and re-indexing the latest GitHub repository..."
+    );
+
+    try {
+      const data = await reimportGithubRepository(
+        selectedProjectId
+      );
+
+      if (data.reindexed === false) {
+        setGithubChangedFiles(null);
+
+        setGithubMessage(
+          "GitHub repository is already up to date. No re-indexing was required."
+        );
+
+        return;
+      }
+
+      setGithubChangedFiles(
+        data.changed_files || {
+          added: [],
+          modified: [],
+          deleted: []
+        }
+      );
+
+      setGithubMessage(
+        `Successfully refreshed ${data.repository}. ${data.files_processed} files and ${data.chunks_created} chunks indexed.`
+      );
+
+      // Reload files and relationships because the codebase changed.
+      loadProjectFiles(selectedProjectId);
+      await loadProjectRelationships(selectedProjectId);
+
+      // Clear stale project-specific results.
+      setSelectedFile(null);
+      setSelectedSource(null);
+      setImpactFile(null);
+      setAffectedFiles([]);
+      setImpactMessage("");
+      setImpactExplanation("");
+      setArchitectureSummary("");
+      setArchitectureMessage("");
+      setShowArchitectureSummary(false);
+      setFileExplanation("");
+      setFileExplanationMessage("");
+      setExplanationFile(null);
+      setCodeReview("");
+      setCodeReviewMessage("");
+      setReviewFile(null);
+      setTestCases("");
+      setTestCasesMessage("");
+      setTestFile(null);
+      setCodeFix("");
+      setCodeFixMessage("");
+      setFixFile(null);
+      setDocumentation("");
+      setDocumentationMessage("");
+      setDocumentationFile(null);
+      setReadme("");
+      setReadmeMessage("");
+      setShowReadme(false);
+      setSearchResults([]);
+      setSearchMessage("");
+      setDiffAnalysis("");
+      setDiffMessage("");
+      setChatHistory([]);
+      setChatMessage("");
+    } catch (error) {
+      console.error(
+        "GitHub refresh failed:",
+        error
+      );
+
+      setGithubMessage(
+        error instanceof Error
+          ? error.message
+          : "Could not refresh GitHub repository."
+      );
+    } finally {
+      setGithubRefreshing(false);
+      finishLoading();
+    }
+  };
+
 
   // ---------------------------------------------------------
   // Create project
@@ -1576,7 +1913,7 @@ function App() {
     try {
 
       const response =
-        await fetch(
+        await authapiFetch(
           `http://127.0.0.1:8000/projects/?${params.toString()}`,
           {
             method: "POST"
@@ -1656,7 +1993,7 @@ function App() {
     try {
 
       const response =
-        await fetch(
+        await authapiFetch(
           "http://127.0.0.1:8000/files/",
           {
             method: "POST",
@@ -1776,7 +2113,7 @@ function App() {
     try {
 
       const response =
-        await fetch(
+        await authapiFetch(
           `http://127.0.0.1:8000/files/upload-zip/${selectedProjectId}`,
           {
             method: "POST",
@@ -1918,82 +2255,52 @@ function App() {
     }
 
 
-    const currentQuestion =
-      question.trim();
+    const currentQuestion = question.trim();
+    const pendingId = Date.now();
 
+    // Immediately show user message + empty answer placeholder
+    setChatHistory((h) => [
+      ...h,
+      { id: pendingId, question: currentQuestion, answer: "", sources: [] }
+    ]);
+
+    // Clear input right away
+    setQuestion("");
 
     setLoadingAction("Thinking...");
-
-    setChatMessage(
-      "Thinking..."
-    );
-
+    setChatMessage("Thinking...");
 
     try {
 
-      // Convert existing chat history
-      // into user/assistant messages
-
       const conversationHistory =
-        chatHistory.flatMap(
-          (chat) => [
-            {
-              role: "user" as const,
-              content:
-                chat.question
-            },
+        chatHistory.flatMap((chat) => [
+          { role: "user" as const,      content: chat.question },
+          { role: "assistant" as const, content: chat.answer  }
+        ]);
 
-            {
-              role: "assistant" as const,
-              content:
-                chat.answer
-            }
-          ]
-        );
-
-
-      const data: ChatResponse =
-        await askQuestion(
-          selectedProjectId,
-          currentQuestion,
-          conversationHistory
-        );
-
-
-      const newMessage: ChatMessage = {
-
-        id: Date.now(),
-
-        question:
-          currentQuestion,
-
-        answer:
-          data.answer,
-
-        sources:
-          data.sources
-      };
-
-
-      setChatHistory(
-        (currentHistory) => [
-          ...currentHistory,
-          newMessage
-        ]
+      const data: ChatResponse = await askQuestion(
+        selectedProjectId,
+        currentQuestion,
+        conversationHistory
       );
 
-
-      // Clear question box
-
-      setQuestion("");
+      // Replace the placeholder with the real answer
+      setChatHistory((h) =>
+        h.map((msg) =>
+          msg.id === pendingId
+            ? { ...msg, answer: data.answer, sources: data.sources }
+            : msg
+        )
+      );
 
       setChatMessage("");
 
     } catch {
 
-      setChatMessage(
-        "Could not get an answer."
-      );
+      // Remove the placeholder on error
+      setChatHistory((h) => h.filter((msg) => msg.id !== pendingId));
+      setChatMessage("Could not get an answer.");
+
     } finally {
       finishLoading();
     }
@@ -2020,11 +2327,30 @@ function App() {
   // Open normal file
   // ---------------------------------------------------------
 
-  const openFile = (
+  const openFile = async (
     file: CodeFile
   ) => {
 
-    setSelectedFile(file);
+    try {
+      setLoadingAction(`Loading ${file.file_path}...`);
+
+      const response = await authapiFetch(
+        `${API_BASE_URL}/files/project/${file.project_id}/file/${file.id}`
+      );
+
+      if (!response.ok) {
+        throw new Error("Could not load file content");
+      }
+
+      const fullFile = await response.json();
+
+      setSelectedFile(fullFile);
+    } catch (error) {
+      console.error("Failed to load file content:", error);
+      setSelectedFile(file);
+    } finally {
+      finishLoading();
+    }
 
     setSelectedSource(null);
 
@@ -2067,9 +2393,6 @@ function App() {
     setReadme("");
     setReadmeMessage("");
     setShowReadme(false);
-
-    setTestRun(null);
-    setTestRunMessage("");
 
     setDiffAnalysis("");
     setDiffMessage("");
@@ -2214,12 +2537,58 @@ function App() {
 
 
   // ---------------------------------------------------------
+  // Authentication UI
+  // ---------------------------------------------------------
+
+  if (authLoading) {
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center"
+        }}
+      >
+        <h2>Checking authentication...</h2>
+      </div>
+    );
+  }
+
+  if (!currentUser) {
+    return <Auth onLogin={handleLogin} />;
+  }
+
+  // ---------------------------------------------------------
   // UI
   // ---------------------------------------------------------
 
   return (
 
+
     <div>
+
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          padding: "12px 0",
+          marginBottom: "15px",
+          borderBottom: "1px solid #ddd"
+        }}
+      >
+        <div>
+          Logged in as <strong>{currentUser.username}</strong>
+        </div>
+
+        <button
+          type="button"
+          onClick={handleLogout}
+        >
+          Logout
+        </button>
+      </div>
 
       <h1>
         Codebase RAG Assistant
@@ -2245,43 +2614,24 @@ function App() {
           CREATE PROJECT
           ===================================================== */}
 
-      <h2>
-        Add a Project
-      </h2>
+      <h2 className="proj-section-title">✦ New Project</h2>
 
-
-      <form
-        onSubmit={handleSubmit}
-      >
-
+      <form className="proj-create-form" onSubmit={handleSubmit}>
         <input
+          className="proj-create-input"
           type="text"
           placeholder="Project name"
           value={name}
-          onChange={(event) =>
-            setName(
-              event.target.value
-            )
-          }
+          onChange={(event) => setName(event.target.value)}
         />
-
-
         <input
+          className="proj-create-input"
           type="text"
           placeholder="Project description"
           value={description}
-          onChange={(event) =>
-            setDescription(
-              event.target.value
-            )
-          }
+          onChange={(event) => setDescription(event.target.value)}
         />
-
-
-        <button type="submit">
-          Add Project
-        </button>
-
+        <button className="proj-create-btn" type="submit">+ Add Project</button>
       </form>
 
 
@@ -2289,59 +2639,32 @@ function App() {
           PROJECTS
           ===================================================== */}
 
-      <h2>
-        Projects
-      </h2>
+      <h2 className="proj-section-title">⬡ Projects</h2>
 
+      {message && <div className="proj-status">{message}</div>}
 
-      {message && (
-        <p>
-          {message}
-        </p>
-      )}
-
-
-      {projects.map(
-        (project) => (
-
-          <div key={project.id}>
-
-            <h3>
-
-              <button
-                type="button"
-                onClick={() =>
-                  setSelectedProjectId(
-                    project.id
-                  )
-                }
-              >
-                {project.name}
-              </button>
-
-            </h3>
-
-
-            <p>
-              {project.description}
-            </p>
-
-
-            {selectedProjectId ===
-              project.id && (
-
-              <p>
-                Selected project:
-                {" "}
-                {project.name}
-              </p>
-
+      <div className="proj-grid">
+        {projects.map((project) => (
+          <div
+            key={project.id}
+            className={`proj-card${selectedProjectId === project.id ? " proj-card--selected" : ""}`}
+          >
+            <span className="proj-card-icon">🗂️</span>
+            <div className="proj-card-name">{project.name}</div>
+            <div className="proj-card-desc">{project.description}</div>
+            {selectedProjectId === project.id && (
+              <span className="proj-card-badge">● Active</span>
             )}
-
+            <button
+              type="button"
+              className="proj-card-select-btn"
+              onClick={() => setSelectedProjectId(project.id)}
+            >
+              {selectedProjectId === project.id ? "✓ Selected" : "Open Project"}
+            </button>
           </div>
-
-        )
-      )}
+        ))}
+      </div>
 
 
       {/* =====================================================
@@ -2458,6 +2781,32 @@ function App() {
               <button
                 type="button"
                 onClick={() => {
+                  document
+                    .getElementById("dependency-graph-section")
+                    ?.scrollIntoView({
+                      behavior: "smooth"
+                    });
+                }}
+              >
+                🔗 Dependency Graph
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  document
+                    .getElementById("github-import-section")
+                    ?.scrollIntoView({
+                      behavior: "smooth"
+                    });
+                }}
+              >
+                🐙 Import from GitHub
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
                   document.getElementById("code-search-section")?.scrollIntoView({
                     behavior: "smooth"
                   });
@@ -2490,13 +2839,14 @@ function App() {
 
               <button
                 type="button"
+                className="dash-tool-btn"
                 onClick={() => {
                   document.getElementById("chat-section")?.scrollIntoView({
                     behavior: "smooth"
                   });
                 }}
               >
-                💬 RAG Chat
+                <span className="dash-tool-emoji">💬</span> RAG Chat
               </button>
 
               <button
@@ -2567,20 +2917,22 @@ function App() {
 
               <button
                 type="button"
-                onClick={generateReadme}
+                onClick={() => {
+                  document
+                    .getElementById("test-runner-section")
+                    ?.scrollIntoView({
+                      behavior: "smooth"
+                    });
+                }}
               >
-                📖 Generate README
+                🧪 Automated Test Runner
               </button>
 
               <button
                 type="button"
-                onClick={() => {
-                  document.getElementById("automated-tests-section")?.scrollIntoView({
-                    behavior: "smooth"
-                  });
-                }}
+                onClick={generateReadme}
               >
-                🧪 Automated Tests
+                📖 Generate README
               </button>
             </div>
 
@@ -2589,85 +2941,19 @@ function App() {
 
 
           {/* =================================================
-              AUTOMATED TESTS
+              AUTOMATED TEST RUNNER
               ================================================= */}
 
-          <div id="automated-tests-section">
+          <div id="test-runner-section">
 
-            <hr />
-
-            <h2>
-              🧪 Automated Tests
-            </h2>
-
-            <p>
-              Run the backend automated test suite and view the results directly in the dashboard.
-            </p>
-
-            <button
-              type="button"
-              onClick={runAutomatedTests}
-              disabled={loadingAction === "Running automated tests..."}
-            >
-              {loadingAction === "Running automated tests..."
-                ? "⏳ Running Tests..."
-                : "🧪 Run Automated Tests"}
-            </button>
-
-            {testRunMessage && (
-              <p>
-                {testRunMessage}
-              </p>
-            )}
-
-            {testRun && (
-              <div
-                style={{
-                  marginTop: "20px",
-                  marginBottom: "20px",
-                  padding: "20px",
-                  border: "1px solid #555",
-                  borderRadius: "8px"
-                }}
-              >
-                <h3>
-                  {testRun.success
-                    ? "✅ Test Suite Passed"
-                    : "❌ Test Suite Failed"}
-                </h3>
-
-                <p>
-                  <strong>Total:</strong> {testRun.total}
-                  {" | "}
-                  <strong>Passed:</strong> {testRun.passed}
-                  {" | "}
-                  <strong>Failed:</strong> {testRun.failed}
-                  {" | "}
-                  <strong>Skipped:</strong> {testRun.skipped}
-                </p>
-
-                <p>
-                  <strong>Duration:</strong> {testRun.duration_seconds}s
-                </p>
-
-                <h3>Test Output</h3>
-
-                <pre
-                  style={{
-                    textAlign: "left",
-                    overflowX: "auto",
-                    whiteSpace: "pre-wrap",
-                    padding: "15px",
-                    border: "1px solid #333",
-                    borderRadius: "6px"
-                  }}
-                >
-                  {testRun.output || "No test output returned."}
-                </pre>
-              </div>
-            )}
+            <TestRunnerPanel
+              projectId={selectedProjectId}
+              generatedTestCode={testCases}
+              generatedTestFileName="generated_ai_test.py"
+            />
 
           </div>
+
 
           {/* =================================================
               CODE DIFF ANALYSIS
@@ -2971,6 +3257,201 @@ function App() {
             </div>
 
           )}
+
+
+          {/* =================================================
+              GITHUB IMPORT
+              ================================================= */}
+
+          <div
+            id="github-import-section"
+            style={{
+              marginTop: "25px",
+              padding: "20px",
+              border: "1px solid #555",
+              borderRadius: "12px"
+            }}
+          >
+
+            <h2>
+              🐙 Import from GitHub
+            </h2>
+
+            <p>
+              Import a public GitHub repository directly into the selected project.
+              The repository will be downloaded, indexed, chunked, and embedded automatically.
+            </p>
+
+            <form onSubmit={handleGithubImport}>
+
+              <input
+                type="url"
+                placeholder="https://github.com/username/repository"
+                value={githubUrl}
+                onChange={(event) =>
+                  setGithubUrl(event.target.value)
+                }
+                required
+                style={{
+                  width: "70%",
+                  padding: "10px",
+                  boxSizing: "border-box"
+                }}
+              />
+
+              <button
+                type="submit"
+                disabled={githubImporting}
+                style={{
+                  marginLeft: "10px",
+                  padding: "10px 16px",
+                  cursor: githubImporting
+                    ? "not-allowed"
+                    : "pointer"
+                }}
+              >
+                {githubImporting
+                  ? "Importing..."
+                  : "🐙 Import Repository"}
+              </button>
+
+            </form>
+
+            {projects.find(
+              (project) => project.id === selectedProjectId
+            )?.github_url && (
+              <div
+                style={{
+                  marginTop: "15px",
+                  padding: "15px",
+                  border: "1px solid #555",
+                  borderRadius: "10px"
+                }}
+              >
+                <strong>
+                  🟢 Connected GitHub Repository
+                </strong>
+
+                <p
+                  style={{
+                    margin: "8px 0",
+                    wordBreak: "break-all"
+                  }}
+                >
+                  {projects.find(
+                    (project) => project.id === selectedProjectId
+                  )?.github_url}
+                </p>
+
+                <button
+                  type="button"
+                  onClick={handleGithubRefresh}
+                  disabled={githubRefreshing || githubImporting}
+                  style={{
+                    padding: "10px 16px",
+                    cursor:
+                      githubRefreshing || githubImporting
+                        ? "not-allowed"
+                        : "pointer"
+                  }}
+                >
+                  {githubRefreshing
+                    ? "Refreshing..."
+                    : "🔄 Refresh GitHub Repository"}
+                </button>
+              </div>
+            )}
+
+            {githubMessage && (
+              <p
+                style={{
+                  marginTop: "15px"
+                }}
+              >
+                {githubMessage}
+              </p>
+            )}
+
+            {githubChangedFiles && (
+              <div
+                style={{
+                  marginTop: "15px",
+                  padding: "15px",
+                  border: "1px solid #555",
+                  borderRadius: "10px"
+                }}
+              >
+                <h3>
+                  🔍 GitHub Changes Detected
+                </h3>
+
+                <div style={{ marginTop: "10px" }}>
+                  <strong>
+                    🟢 Added ({githubChangedFiles.added.length})
+                  </strong>
+
+                  {githubChangedFiles.added.length > 0 ? (
+                    <ul>
+                      {githubChangedFiles.added.map((file) => (
+                        <li key={`added-${file}`}>
+                          {file}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p>No added files.</p>
+                  )}
+                </div>
+
+                <div style={{ marginTop: "10px" }}>
+                  <strong>
+                    🟡 Modified ({githubChangedFiles.modified.length})
+                  </strong>
+
+                  {githubChangedFiles.modified.length > 0 ? (
+                    <ul>
+                      {githubChangedFiles.modified.map((file) => (
+                        <li key={`modified-${file}`}>
+                          {file}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p>No modified files.</p>
+                  )}
+                </div>
+
+                <div style={{ marginTop: "10px" }}>
+                  <strong>
+                    🔴 Deleted ({githubChangedFiles.deleted.length})
+                  </strong>
+
+                  {githubChangedFiles.deleted.length > 0 ? (
+                    <ul>
+                      {githubChangedFiles.deleted.map((file) => (
+                        <li key={`deleted-${file}`}>
+                          {file}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p>No deleted files.</p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <p
+              style={{
+                marginBottom: 0,
+                fontSize: "14px",
+                opacity: 0.8
+              }}
+            >
+              Current security limit: maximum 200 files and 50 MB uncompressed repository size.
+            </p>
+
+          </div>
 
 
           {/* =================================================
@@ -3382,9 +3863,78 @@ function App() {
               )}
 
               {testCases && (
-                <ReactMarkdown>
-                  {testCases}
-                </ReactMarkdown>
+                <>
+                  <ReactMarkdown>
+                    {testCases}
+                  </ReactMarkdown>
+
+                  <button
+                    type="button"
+                    onClick={runGeneratedTestCases}
+                    disabled={loadingAction !== "" && loadingAction !== "Generating AI test cases..."}
+                    style={{
+                      marginTop: "10px",
+                      marginRight: "10px"
+                    }}
+                  >
+                    ▶ Run Generated Test
+                  </button>
+                </>
+              )}
+
+              {generatedTestMessage && (
+                <p>
+                  {generatedTestMessage}
+                </p>
+              )}
+
+              {generatedTestResult && (
+                <div
+                  style={{
+                    marginTop: "15px",
+                    padding: "15px",
+                    border: "1px solid #555",
+                    borderRadius: "8px"
+                  }}
+                >
+                  <h3>
+                    {generatedTestResult.status === "passed"
+                      ? "✅ Generated Test Passed"
+                      : generatedTestResult.status === "failed"
+                      ? "❌ Generated Test Failed"
+                      : generatedTestResult.status === "timeout"
+                      ? "⏱️ Generated Test Timed Out"
+                      : "ℹ️ Generated Test Result"}
+                  </h3>
+
+                  <p>
+                    {generatedTestResult.message}
+                  </p>
+
+                  {generatedTestResult.duration_seconds !==
+                    undefined && (
+                    <p>
+                      Duration:{" "}
+                      {generatedTestResult.duration_seconds}s
+                    </p>
+                  )}
+
+                  <pre
+                    style={{
+                      padding: "12px",
+                      borderRadius: "6px",
+                      background: "#111",
+                      color: "#eee",
+                      whiteSpace: "pre-wrap",
+                      overflowX: "auto"
+                    }}
+                  >
+                    {generatedTestResult.output ||
+                      generatedTestResult.stdout ||
+                      generatedTestResult.stderr ||
+                      "No output."}
+                  </pre>
+                </div>
               )}
 
               <button
@@ -3393,6 +3943,8 @@ function App() {
                   setTestFile(null);
                   setTestCases("");
                   setTestCasesMessage("");
+                  setGeneratedTestResult(null);
+                  setGeneratedTestMessage("");
                 }}
                 style={{
                   marginTop: "10px"
@@ -3607,55 +4159,103 @@ function App() {
               DEPENDENCY GRAPH
               ================================================= */}
 
-          <hr />
+          <div
+            id="dependency-graph-section"
+            style={{
+              marginTop: "25px",
+              padding: "20px",
+              border: "1px solid #555",
+              borderRadius: "12px"
+            }}
+          >
 
-          <h2>
-            Codebase Dependencies
-          </h2>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                gap: "12px",
+                flexWrap: "wrap"
+              }}
+            >
+              <div>
+                <h2 style={{ marginTop: 0 }}>
+                  🔗 Dependency Graph
+                </h2>
 
+                <p>
+                  Visualize which files import other files in this project.
+                </p>
+              </div>
 
-          {relationships.length === 0 ? (
+              <button
+                type="button"
+                onClick={() => loadProjectRelationships(selectedProjectId)}
+              >
+                🔄 Refresh Graph
+              </button>
+            </div>
 
-            <p>
-              No code relationships found
-              for this project.
-            </p>
+            {relationships.length === 0 ? (
 
-          ) : (
+              <div
+                style={{
+                  marginTop: "15px",
+                  padding: "18px",
+                  border: "1px dashed #666",
+                  borderRadius: "10px"
+                }}
+              >
+                <p style={{ margin: 0 }}>
+                  No code relationships found for this project.
+                </p>
 
-            <div>
+                <p style={{ marginBottom: 0 }}>
+                  Upload or add files with imports, then refresh the graph.
+                </p>
+              </div>
 
-              {relationships.map(
-                (relationship) => {
+            ) : (
+
+              <div
+                style={{
+                  display: "grid",
+                  gap: "14px",
+                  marginTop: "15px"
+                }}
+              >
+
+                {relationships.map((relationship) => {
 
                   const sourceFile = files.find(
                     (file) =>
-                      file.id ===
-                      relationship.source_file_id
+                      file.id === relationship.source_file_id
                   );
 
                   const targetFile = files.find(
                     (file) =>
-                      file.id ===
-                      relationship.target_file_id
+                      file.id === relationship.target_file_id
                   );
 
                   return (
                     <div
                       key={relationship.id}
                       style={{
-                        marginBottom: "15px",
-                        padding: "15px",
+                        padding: "16px",
                         border: "1px solid #555",
-                        borderRadius: "8px"
+                        borderRadius: "10px"
                       }}
                     >
 
                       <div
                         style={{
-                          marginBottom: "10px"
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "10px",
+                          flexWrap: "wrap"
                         }}
                       >
+
                         <button
                           type="button"
                           onClick={() => {
@@ -3666,24 +4266,15 @@ function App() {
                         >
                           📄 {relationship.source_file}
                         </button>
-                      </div>
 
-                      <div
-                        style={{
-                          marginLeft: "20px",
-                          marginBottom: "10px"
-                        }}
-                      >
-                        <span>
-                          └── {relationship.relationship_type} →
+                        <span
+                          style={{
+                            fontWeight: "bold"
+                          }}
+                        >
+                          ── {relationship.relationship_type} ──→
                         </span>
-                      </div>
 
-                      <div
-                        style={{
-                          marginLeft: "40px"
-                        }}
-                      >
                         <button
                           type="button"
                           onClick={() => {
@@ -3694,17 +4285,29 @@ function App() {
                         >
                           📄 {relationship.target_file}
                         </button>
+
                       </div>
 
                       <div
                         style={{
-                          marginTop: "15px",
-                          marginLeft: "20px"
+                          marginTop: "12px",
+                          padding: "10px",
+                          borderRadius: "8px",
+                          border: "1px solid #444"
                         }}
                       >
-                        <span>
-                          ← imported by ──
-                        </span>
+                        <strong>Dependency:</strong>{" "}
+                        {relationship.source_file}{" "}
+                        {relationship.relationship_type}{" "}
+                        {relationship.target_file}
+                      </div>
+
+                      <div
+                        style={{
+                          marginTop: "10px"
+                        }}
+                      >
+                        <strong>Imported by:</strong>{" "}
 
                         <button
                           type="button"
@@ -3713,22 +4316,21 @@ function App() {
                               openFile(sourceFile);
                             }
                           }}
-                          style={{
-                            marginLeft: "8px"
-                          }}
                         >
                           {relationship.source_file}
                         </button>
+
                       </div>
 
                     </div>
                   );
-                }
-              )}
+                })}
 
-            </div>
+              </div>
 
-          )}
+            )}
+
+          </div>
 
 
           {/* =================================================
@@ -3781,183 +4383,17 @@ function App() {
               CHAT
               ================================================= */}
 
-          <hr />
-
-          <h2 id="chat-section">
-            Ask About Your Code
-          </h2>
-
-
-          <form
-            onSubmit={handleChatSubmit}
-          >
-
-            <textarea
-              placeholder="Ask a question about this codebase..."
-              value={question}
-              onChange={(event) =>
-                setQuestion(
-                  event.target.value
-                )
-              }
-              rows={5}
-              cols={60}
+          <div id="chat-section" style={{ marginTop: "25px" }}>
+            <Chat
+              chatHistory={chatHistory}
+              question={question}
+              chatMessage={chatMessage}
+              onQuestionChange={setQuestion}
+              onSubmit={handleChatSubmit}
+              onClearChat={clearChat}
+              onOpenSource={openSource}
             />
-
-
-            <br />
-
-
-            <button type="submit">
-              Ask AI
-            </button>
-
-
-            {chatHistory.length > 0 && (
-
-              <button
-                type="button"
-                onClick={clearChat}
-                style={{
-                  marginLeft:
-                    "10px"
-                }}
-              >
-                Clear Chat
-              </button>
-
-            )}
-
-          </form>
-
-
-          {chatMessage && (
-            <p>
-              {chatMessage}
-            </p>
-          )}
-
-
-          {/* =================================================
-              CHAT HISTORY
-              ================================================= */}
-
-          {chatHistory.length > 0 && (
-
-            <div>
-
-              <h2>
-                Conversation
-              </h2>
-
-
-              {chatHistory.map(
-                (chat) => (
-
-                  <div
-                    key={chat.id}
-                    style={{
-                      marginBottom:
-                        "30px"
-                    }}
-                  >
-
-                    {/* User question */}
-
-                    <div>
-
-                      <strong>
-                        You
-                      </strong>
-
-
-                      <p>
-                        {chat.question}
-                      </p>
-
-                    </div>
-
-
-                    {/* AI answer */}
-
-                    <div>
-
-                      <strong>
-                        AI
-                      </strong>
-
-
-                      <ReactMarkdown>
-                        {chat.answer}
-                      </ReactMarkdown>
-
-                    </div>
-
-
-                    {/* Sources */}
-
-                    {chat.sources.length > 0 && (
-
-                      <div>
-
-                        <h3>
-                          Sources
-                        </h3>
-
-
-                        {chat.sources.map(
-                          (source) => (
-
-                            <div
-                              key={
-                                source.chunk_id
-                              }
-                            >
-
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  openSource(
-                                    source
-                                  )
-                                }
-                              >
-
-                                📌{" "}
-                                {
-                                  source.file_path
-                                }{" "}
-                                | Lines{" "}
-                                {
-                                  source.start_line
-                                }
-                                -
-                                {
-                                  source.end_line
-                                }
-
-                              </button>
-
-                            </div>
-
-                          )
-                        )}
-
-                      </div>
-
-                    )}
-
-
-                    <hr />
-
-                  </div>
-
-                )
-              )}
-
-            </div>
-
-          )}
+          </div>
 
 
           {/* =================================================

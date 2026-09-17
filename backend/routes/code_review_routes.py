@@ -4,7 +4,9 @@ from sqlalchemy.orm import Session
 from database.database import SessionLocal
 from models.project import Project
 from models.code_file import CodeFile
+from models.user import User
 
+from services.auth_dependency import get_current_user
 from services.code_review_service import generate_code_review
 
 
@@ -27,13 +29,19 @@ def get_db():
 def review_file(
     project_id: int,
     file_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
+
+    # ---------------------------------------------------------
+    # Check project ownership
+    # ---------------------------------------------------------
 
     project = (
         db.query(Project)
         .filter(
-            Project.id == project_id
+            Project.id == project_id,
+            Project.user_id == current_user.id
         )
         .first()
     )
@@ -43,6 +51,11 @@ def review_file(
             status_code=404,
             detail="Project not found"
         )
+
+
+    # ---------------------------------------------------------
+    # Check file
+    # ---------------------------------------------------------
 
     code_file = (
         db.query(CodeFile)
@@ -59,11 +72,21 @@ def review_file(
             detail="Code file not found"
         )
 
+
+    # ---------------------------------------------------------
+    # Generate AI code review
+    # ---------------------------------------------------------
+
     review = generate_code_review(
         db=db,
         file_id=file_id,
         project_id=project_id
     )
+
+
+    # ---------------------------------------------------------
+    # Return result
+    # ---------------------------------------------------------
 
     return {
         "project_id": project_id,

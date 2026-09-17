@@ -4,6 +4,9 @@ from sqlalchemy.orm import Session
 from database.database import SessionLocal
 from models.project import Project
 from models.code_file import CodeFile
+from models.user import User
+
+from services.auth_dependency import get_current_user
 from services.documentation_service import generate_file_documentation
 
 
@@ -15,6 +18,7 @@ router = APIRouter(
 
 def get_db():
     db = SessionLocal()
+
     try:
         yield db
     finally:
@@ -25,11 +29,20 @@ def get_db():
 def document_file(
     project_id: int,
     file_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
+
+    # ---------------------------------------------------------
+    # Check project ownership
+    # ---------------------------------------------------------
+
     project = (
         db.query(Project)
-        .filter(Project.id == project_id)
+        .filter(
+            Project.id == project_id,
+            Project.user_id == current_user.id
+        )
         .first()
     )
 
@@ -38,6 +51,11 @@ def document_file(
             status_code=404,
             detail="Project not found"
         )
+
+
+    # ---------------------------------------------------------
+    # Check file
+    # ---------------------------------------------------------
 
     code_file = (
         db.query(CodeFile)
@@ -54,11 +72,21 @@ def document_file(
             detail="Code file not found"
         )
 
+
+    # ---------------------------------------------------------
+    # Generate documentation
+    # ---------------------------------------------------------
+
     documentation = generate_file_documentation(
         db=db,
         file_id=file_id,
         project_id=project_id
     )
+
+
+    # ---------------------------------------------------------
+    # Return result
+    # ---------------------------------------------------------
 
     return {
         "project_id": project_id,

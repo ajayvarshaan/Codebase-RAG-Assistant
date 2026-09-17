@@ -1,5 +1,10 @@
+import logging
+import time
+from collections import defaultdict, deque
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from routes.auth_routes import router as auth_router
 
 
 # =========================================================
@@ -64,7 +69,7 @@ from routes.test_runner_routes import (
     router as test_runner_router
 )
 
-
+from routes.github_routes import router as github_router
 # =========================================================
 # Database
 # =========================================================
@@ -77,12 +82,12 @@ from database.database import Base, engine
 # =========================================================
 
 from models.project import Project
-
 from models.code_file import CodeFile
-
 from models.code_chunk import CodeChunk
-
 from models.code_relationship import CodeRelationship
+from models.user import User
+
+Base.metadata.create_all(bind=engine)
 
 
 # =========================================================
@@ -100,13 +105,51 @@ from routes.code_file_routes import (
 from routes.chunk_routes import (
     router as chunk_router
 )
+from routes.auth_routes import router as auth_router
 
-
+from routes.auth_routes import router as auth_router
 # =========================================================
 # Create FastAPI Application
 # =========================================================
 
+async def secure_exception_handler(request, exc):
+    """
+    Return a safe error message without exposing internal
+    stack traces, database details, file paths, or secrets.
+    """
+    logging.exception(
+        "Unhandled backend error: %s %s",
+        request.method,
+        request.url.path
+    )
+
+    return JSONResponse(
+        status_code=500,
+        content={
+            "detail": "An unexpected server error occurred. Please try again."
+        }
+    )
+
+
 app = FastAPI()
+
+# Keep detailed exception information in the backend logs,
+# but return a safe message to API clients.
+logger = logging.getLogger("uvicorn.error")
+
+
+@app.exception_handler(Exception)
+async def handle_unexpected_exception(request, exc):
+    logger.exception(
+        "Unhandled server error on %s %s",
+        request.method,
+        request.url.path,
+    )
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal server error. Please try again."},
+    )
+
 
 
 # =========================================================
@@ -124,6 +167,8 @@ app.include_router(impact_router)
 app.include_router(
     impact_explanation_router
 )
+app.add_exception_handler(Exception, secure_exception_handler)
+
 
 app.include_router(
     architecture_router
@@ -167,6 +212,11 @@ app.include_router(
     test_runner_router
 )
 
+app.include_router(auth_router)
+
+app.include_router(auth_router)
+
+app.include_router(github_router)
 
 # =========================================================
 # Create Database Tables
@@ -193,7 +243,7 @@ app.include_router(
     chunk_router
 )
 
-
+app.include_router(auth_router)
 # =========================================================
 # Security Middleware
 # =========================================================
@@ -203,6 +253,52 @@ from starlette.types import ASGIApp, Receive, Scope, Send
 
 
 MAX_REQUEST_SIZE = 25 * 1024 * 1024  # 25 MB
+
+
+
+# =========================================================
+# Simple in-memory rate limiting
+# =========================================================
+
+AI_RATE_LIMIT = 30          # requests
+AI_RATE_WINDOW = 60         # seconds
+
+AI_ENDPOINTS = (
+    "/chat/",
+    "/search/",
+    "/architecture/",
+    "/impact/",
+    "/impact-explanation/",
+    "/file-explanation/",
+    "/code-review/",
+    "/test-generation/",
+    "/code-fix/",
+    "/code-search/",
+    "/documentation/",
+    "/readme/",
+    "/code-diff/",
+)
+
+request_history = defaultdict(deque)
+
+
+def is_ai_endpoint(path: str) -> bool:
+    return any(path.startswith(endpoint) for endpoint in AI_ENDPOINTS)
+
+
+def is_rate_limited(client_ip: str, path: str) -> bool:
+    key = f"{client_ip}:{path.split('/')[1]}"
+    now = time.monotonic()
+    requests = request_history[key]
+
+    while requests and now - requests[0] > AI_RATE_WINDOW:
+        requests.popleft()
+
+    if len(requests) >= AI_RATE_LIMIT:
+        return True
+
+    requests.append(now)
+    return False
 
 
 class SecurityMiddleware:
@@ -219,6 +315,51 @@ class SecurityMiddleware:
     ):
         if scope["type"] != "http":
             await self.app(scope, receive, send)
+            return
+
+        # Basic URL/input validation.
+        raw_path = scope.get("path", "")
+        raw_query = scope.get("query_string", b"")
+
+        if "\\x00" in raw_path:
+            response = JSONResponse(
+                status_code=400,
+                content={"detail": "Invalid request path"}
+            )
+            await response(scope, receive, send)
+            return
+
+        if len(raw_path) > 2048:
+            response = JSONResponse(
+                status_code=414,
+                content={"detail": "Request URL is too long"}
+            )
+            await response(scope, receive, send)
+            return
+
+        if len(raw_query) > 4096:
+            response = JSONResponse(
+                status_code=414,
+                content={"detail": "Query string is too long"}
+            )
+            await response(scope, receive, send)
+            return
+
+        client = scope.get("client")
+        client_ip = client[0] if client else "unknown"
+
+        if is_ai_endpoint(raw_path) and is_rate_limited(client_ip, raw_path):
+            response = JSONResponse(
+                status_code=429,
+                content={
+                    "detail": (
+                        "Too many AI requests. "
+                        "Please wait a minute and try again."
+                    )
+                },
+                headers={"Retry-After": str(AI_RATE_WINDOW)}
+            )
+            await response(scope, receive, send)
             return
 
         headers = {

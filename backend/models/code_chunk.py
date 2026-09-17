@@ -8,7 +8,11 @@ from database.database import Base
 class CodeChunk(Base):
     __tablename__ = "code_chunks"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(
+        Integer,
+        primary_key=True,
+        index=True
+    )
 
     project_id = Column(
         Integer,
@@ -22,14 +26,32 @@ class CodeChunk(Base):
         nullable=False
     )
 
-    content = Column(Text, nullable=False)
+    content = Column(
+        Text,
+        nullable=False
+    )
 
-    chunk_index = Column(Integer, nullable=False)
+    chunk_index = Column(
+        Integer,
+        nullable=False
+    )
 
-    start_line = Column(Integer, nullable=False)
-    end_line = Column(Integer, nullable=False)
+    start_line = Column(
+        Integer,
+        nullable=False
+    )
 
-    embedding = Column(Vector(1536), nullable=True)
+    end_line = Column(
+        Integer,
+        nullable=False
+    )
+
+    # Local Sentence Transformers embedding
+    # all-MiniLM-L6-v2 = 384 dimensions
+    embedding = Column(
+        Vector(384),
+        nullable=True
+    )
 
     embedding_model = Column(
         String(100),

@@ -1,23 +1,7 @@
-/**
- * =====================================================================
- *  Codebase RAG Assistant — "Aurora 2.0" UI Theme  (pure CSS)
- *  No React (.tsx) or Python (.py) files are touched.
- *
- *  What changed vs. Aurora 1.0:
- *  · Correct structural alignment — workspace band, toolbars, chat
- *    bubbles (user right / AI left), source chips, dependency arrows.
- *  · Inline-style panels are now actually re-themed (React serializes
- *    #555 as rgb(), so the old `style*="#555"` hooks never matched).
- *  · Far more motion — star field, aurora sheen sweeps, animated
- *    gradient borders, magnetic buttons, pulsing status pills,
- *    staggered card reveals, orbital boot loader.
- *  =====================================================================
- */
-
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap");
 
 /* =====================================================================
-   Design tokens (dark first)
+   Design tokens
    ===================================================================== */
 :root {
   color-scheme: dark;
@@ -30,103 +14,80 @@
   --font-head: "Manrope", "Inter", "Segoe UI", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
 
-  --acc: #8b5cf6;
+  --acc:   #8b5cf6;
   --acc-2: #22d3ee;
   --acc-3: #ff5fa2;
 
-  --bg-0: #070912;
-  --bg-1: #0d1020;
-  --bg-2: #151a34;
-  --blob-a: rgba(124, 92, 255, 0.22);
-  --blob-b: rgba(34, 211, 238, 0.17);
-  --blob-c: rgba(255, 95, 162, 0.13);
-  --grid-dot: rgba(148, 163, 230, 0.09);
+  --bg-0: #060810;
+  --bg-1: #0b0f1e;
+  --bg-2: #131828;
+  --blob-a: rgba(124, 92, 255, 0.26);
+  --blob-b: rgba(34, 211, 238, 0.20);
+  --blob-c: rgba(255, 95, 162, 0.15);
+  --grid-dot: rgba(148, 163, 230, 0.08);
 
-  --surface: rgba(20, 24, 48, 0.5);
-  --surface-soft: rgba(24, 30, 62, 0.4);
-  --panel-bg: rgba(15, 18, 38, 0.58);
-  --panel-bg-2: rgba(10, 13, 31, 0.55);
-  --panel-border: rgba(139, 107, 255, 0.32);
-  --field-bg: rgba(8, 11, 26, 0.5);
-  --field-bg-focus: rgba(8, 11, 26, 0.62);
-  --msg-bg: rgba(21, 26, 56, 0.55);
-  --chip-bg: rgba(124, 92, 255, 0.14);
-  --acc-soft: rgba(143, 107, 255, 0.14);
-  --acc-soft-2: rgba(34, 211, 238, 0.09);
-  --code-bg-1: #0b0e22;
-  --code-bg-2: #060a18;
-  --code-ink: #d7e3ff;
+  --surface:      rgba(18, 22, 46, 0.55);
+  --surface-soft: rgba(22, 28, 58, 0.42);
+  --panel-bg:     rgba(13, 16, 36, 0.62);
+  --panel-bg-2:   rgba(8, 11, 28, 0.58);
+  --panel-border: rgba(139, 107, 255, 0.34);
+  --field-bg:       rgba(6, 9, 22, 0.55);
+  --field-bg-focus: rgba(6, 9, 22, 0.68);
+  --msg-bg:   rgba(18, 24, 52, 0.58);
+  --chip-bg:  rgba(124, 92, 255, 0.15);
+  --acc-soft:   rgba(143, 107, 255, 0.15);
+  --acc-soft-2: rgba(34, 211, 238, 0.10);
+  --code-bg-1: #090c1e;
+  --code-bg-2: #050816;
+  --code-ink:  #d7e3ff;
 
-  --border: rgba(148, 163, 230, 0.16);
-  --border-strong: rgba(148, 163, 230, 0.34);
-  --border-acc: rgba(124, 92, 255, 0.5);
+  --border:        rgba(148, 163, 230, 0.15);
+  --border-strong: rgba(148, 163, 230, 0.32);
+  --border-acc:    rgba(124, 92, 255, 0.52);
 
-  --text: #c3cbe2;
-  --text-h: #f2f5ff;
-  --text-dim: #8b93ab;
+  --text:      #bec8e0;
+  --text-h:    #f0f4ff;
+  --text-dim:  #8890a8;
   --cyan-tint: #7ee8ff;
   --pink-tint: #ff9ecb;
 
-  --glow: 0 0 26px rgba(124, 92, 255, 0.35);
-  --shadow-sm: 0 4px 16px -6px rgba(3, 5, 20, 0.45);
-  --shadow-md: 0 14px 36px -10px rgba(3, 5, 20, 0.6);
-  --shadow-lg: 0 26px 64px -14px rgba(3, 5, 20, 0.75);
+  --glow:      0 0 28px rgba(124, 92, 255, 0.38);
+  --shadow-sm: 0 4px 18px -6px rgba(2, 4, 18, 0.5);
+  --shadow-md: 0 14px 38px -10px rgba(2, 4, 18, 0.65);
+  --shadow-lg: 0 28px 68px -14px rgba(2, 4, 18, 0.8);
 
-  --radius-xl: 26px;
-  --radius-lg: 18px;
-  --radius-md: 12px;
+  --radius-xl:   28px;
+  --radius-lg:   18px;
+  --radius-md:   12px;
   --radius-pill: 999px;
 }
 
-/* ---------- Light theme ---------- */
 @media (prefers-color-scheme: light) {
   :root {
     color-scheme: light;
-
-    --bg-0: #eaeefc;
-    --bg-1: #f4f6ff;
-    --bg-2: #e4e9fb;
-    --blob-a: rgba(124, 92, 255, 0.16);
-    --blob-b: rgba(34, 211, 238, 0.14);
-    --blob-c: rgba(255, 95, 162, 0.1);
-    --grid-dot: rgba(90, 100, 180, 0.09);
-
-    --surface: rgba(255, 255, 255, 0.72);
-    --surface-soft: rgba(255, 255, 255, 0.55);
-    --panel-bg: rgba(255, 255, 255, 0.62);
-    --panel-bg-2: rgba(255, 255, 255, 0.8);
-    --panel-border: rgba(120, 90, 220, 0.32);
-    --field-bg: rgba(255, 255, 255, 0.78);
-    --field-bg-focus: rgba(255, 255, 255, 0.95);
-    --msg-bg: rgba(255, 255, 255, 0.6);
-    --chip-bg: rgba(124, 92, 255, 0.09);
-    --acc-soft: rgba(124, 92, 255, 0.1);
-    --acc-soft-2: rgba(34, 211, 238, 0.08);
-    --code-bg-1: #f5f7ff;
-    --code-bg-2: #e9edfb;
-    --code-ink: #1c2240;
-
-    --border: rgba(90, 100, 180, 0.18);
-    --border-strong: rgba(90, 100, 180, 0.36);
-    --border-acc: rgba(124, 92, 255, 0.5);
-
-    --text: #414a68;
-    --text-h: #141a33;
-    --text-dim: #757ea0;
-
-    --glow: 0 0 22px rgba(124, 92, 255, 0.25);
-    --shadow-sm: 0 4px 16px -6px rgba(90, 100, 185, 0.25);
-    --shadow-md: 0 14px 36px -10px rgba(90, 100, 185, 0.3);
-    --shadow-lg: 0 26px 64px -14px rgba(90, 100, 185, 0.35);
+    --bg-0: #e8ecfa; --bg-1: #f2f5ff; --bg-2: #e2e8fb;
+    --blob-a: rgba(124, 92, 255, 0.14); --blob-b: rgba(34, 211, 238, 0.12); --blob-c: rgba(255, 95, 162, 0.09);
+    --grid-dot: rgba(90, 100, 180, 0.08);
+    --surface: rgba(255,255,255,0.74); --surface-soft: rgba(255,255,255,0.56);
+    --panel-bg: rgba(255,255,255,0.64); --panel-bg-2: rgba(255,255,255,0.82);
+    --panel-border: rgba(120, 90, 220, 0.30);
+    --field-bg: rgba(255,255,255,0.80); --field-bg-focus: rgba(255,255,255,0.96);
+    --msg-bg: rgba(255,255,255,0.62); --chip-bg: rgba(124, 92, 255, 0.09);
+    --acc-soft: rgba(124, 92, 255, 0.10); --acc-soft-2: rgba(34, 211, 238, 0.07);
+    --code-bg-1: #f4f6ff; --code-bg-2: #e8ecfb; --code-ink: #1a2040;
+    --border: rgba(90,100,180,0.17); --border-strong: rgba(90,100,180,0.34); --border-acc: rgba(124,92,255,0.50);
+    --text: #3e4766; --text-h: #121830; --text-dim: #737ca0;
+    --glow: 0 0 22px rgba(124,92,255,0.22);
+    --shadow-sm: 0 4px 16px -6px rgba(90,100,185,0.22);
+    --shadow-md: 0 14px 36px -10px rgba(90,100,185,0.28);
+    --shadow-lg: 0 26px 64px -14px rgba(90,100,185,0.32);
   }
 }
 
 /* =====================================================================
-   Base
+   Base reset
    ===================================================================== */
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 html {
   background: var(--bg-0);
@@ -136,51 +97,44 @@ html {
 
 body {
   margin: 0;
-  font: 500 15.5px/1.6 var(--font-sans);
+  font: 500 15.5px/1.65 var(--font-sans);
   color: var(--text);
   min-height: 100svh;
   overflow-x: hidden;
   position: relative;
   z-index: 0;
   background-image:
-    radial-gradient(1200px 820px at 10% 6%, var(--blob-a), transparent 62%),
-    radial-gradient(1100px 780px at 92% 20%, var(--blob-b), transparent 62%),
-    radial-gradient(900px 640px at 55% 112%, var(--blob-c), transparent 62%),
-    radial-gradient(circle, var(--grid-dot) 1px, transparent 1.4px),
-    linear-gradient(155deg, var(--bg-0) 0%, var(--bg-1) 52%, var(--bg-2) 100%);
-  background-size: auto, auto, auto, 36px 36px, auto;
+    radial-gradient(1300px 900px at 8% 5%,   var(--blob-a), transparent 62%),
+    radial-gradient(1100px 800px at 94% 18%,  var(--blob-b), transparent 62%),
+    radial-gradient(950px  680px at 52% 115%, var(--blob-c), transparent 62%),
+    radial-gradient(circle, var(--grid-dot) 1px, transparent 1.5px),
+    linear-gradient(158deg, var(--bg-0) 0%, var(--bg-1) 52%, var(--bg-2) 100%);
+  background-size: auto, auto, auto, 38px 38px, auto;
   background-repeat: no-repeat, no-repeat, no-repeat, repeat, no-repeat;
   background-attachment: fixed, fixed, fixed, fixed, fixed;
   background-color: var(--bg-1);
 }
 
-/* ---------- Selection / focus / scrollbars ---------- */
 ::selection {
-  background: linear-gradient(135deg, rgba(124, 92, 255, 0.45), rgba(34, 211, 238, 0.45));
+  background: linear-gradient(135deg, rgba(124,92,255,0.48), rgba(34,211,238,0.48));
   color: var(--text-h);
 }
 
 :focus-visible {
-  outline: 2px solid rgba(124, 92, 255, 0.85);
+  outline: 2px solid rgba(124,92,255,0.88);
   outline-offset: 2px;
 }
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(124, 92, 255, 0.55) transparent;
+  scrollbar-color: rgba(124,92,255,0.55) transparent;
 }
-
-::-webkit-scrollbar {
-  width: 11px;
-  height: 11px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, rgba(124, 92, 255, 0.75), rgba(34, 211, 238, 0.55));
+  background: linear-gradient(180deg, rgba(124,92,255,0.75), rgba(34,211,238,0.55));
   border-radius: 999px;
-  border: 3px solid rgba(0, 0, 0, 0.2);
+  border: 3px solid rgba(0,0,0,0.18);
   background-clip: padding-box;
 }
 ::-webkit-scrollbar-thumb:hover {
@@ -188,7 +142,7 @@ body {
 }
 
 /* =====================================================================
-   Living backdrop — drifting aurora blobs + twinkling star field
+   Living backdrop — aurora blobs + star field
    ===================================================================== */
 body::before,
 body::after {
@@ -199,25 +153,23 @@ body::after {
   pointer-events: none;
 }
 
-/* Twinkling star field */
 body::before {
   background-image:
-    radial-gradient(circle, rgba(255, 255, 255, 0.72) 1px, transparent 1.2px),
-    radial-gradient(circle, rgba(114, 137, 218, 0.55) 1px, transparent 1.3px),
-    radial-gradient(circle, rgba(34, 211, 238, 0.5) 1px, transparent 1.2px);
+    radial-gradient(circle, rgba(255,255,255,0.75) 1px, transparent 1.2px),
+    radial-gradient(circle, rgba(114,137,218,0.55) 1px, transparent 1.3px),
+    radial-gradient(circle, rgba(34,211,238,0.50)  1px, transparent 1.2px);
   background-size: 380px 380px, 620px 620px, 900px 900px;
   background-position: 0 0, 140px 80px, 300px 200px;
   animation: star-drift 90s linear infinite, star-twinkle 7s ease-in-out infinite;
 }
 
-/* Drifting aurora blobs */
 body::after {
   inset: -160px;
   background:
-    radial-gradient(620px 620px at 16% 12%, rgba(124, 92, 255, 0.5), transparent 70%),
-    radial-gradient(560px 560px at 88% 18%, rgba(34, 211, 238, 0.42), transparent 70%),
-    radial-gradient(480px 480px at 76% 110%, rgba(255, 95, 162, 0.3), transparent 72%);
-  animation: blob-drift-c 40s ease-in-out infinite;
+    radial-gradient(640px 640px at 16% 12%, rgba(124,92,255,0.52), transparent 70%),
+    radial-gradient(580px 580px at 88% 18%, rgba(34,211,238,0.44), transparent 70%),
+    radial-gradient(500px 500px at 76% 112%, rgba(255,95,162,0.32), transparent 72%);
+  animation: blob-drift-c 42s ease-in-out infinite;
 }
 
 /* =====================================================================
@@ -226,27 +178,35 @@ body::after {
 #root {
   position: relative;
   z-index: 1;
-  width: min(1210px, calc(100% - 32px));
+  width: min(1220px, calc(100% - 32px));
   max-width: 100%;
   margin: 24px auto;
-  padding: 42px 46px 34px;
+  padding: 44px 48px 36px;
   border: 1px solid var(--border-strong);
   border-radius: calc(var(--radius-xl) + 8px);
   background:
-    radial-gradient(120% 55% at 50% 0%, rgba(124, 92, 255, 0.1), transparent 60%),
+    radial-gradient(120% 55% at 50% 0%, rgba(124,92,255,0.11), transparent 60%),
     linear-gradient(180deg, var(--surface) 0%, var(--surface) 100%);
   box-shadow:
     var(--shadow-lg),
-    0 0 0 1px rgba(124, 92, 255, 0.08),
-    0 0 48px rgba(124, 92, 255, 0.16);
-  backdrop-filter: blur(18px) saturate(150%);
+    0 0 0 1px rgba(124,92,255,0.09),
+    0 0 52px rgba(124,92,255,0.18);
+  backdrop-filter: blur(20px) saturate(155%);
   display: flex;
   flex-direction: column;
   align-items: stretch;
   text-align: left;
   color: var(--text);
   min-height: 100svh;
-  animation: root-in 0.95s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: root-in 1s cubic-bezier(0.16, 1, 0.3, 1) both;
+  transition: box-shadow 0.5s;
+}
+
+#root:hover {
+  box-shadow:
+    var(--shadow-lg),
+    0 0 0 1px rgba(124,92,255,0.14),
+    0 0 72px rgba(124,92,255,0.24);
 }
 
 /* inner blueprint grid */
@@ -257,27 +217,26 @@ body::after {
   border-radius: inherit;
   pointer-events: none;
   background-image:
-    linear-gradient(rgba(148, 163, 230, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(148, 163, 230, 0.05) 1px, transparent 1px);
-  background-size: 44px 44px;
+    linear-gradient(rgba(148,163,230,0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148,163,230,0.045) 1px, transparent 1px);
+  background-size: 46px 46px;
 }
 
-/* soft crown of light */
+/* crown of light */
 #root::after {
   content: "";
   position: absolute;
   inset: 0;
   border-radius: inherit;
   pointer-events: none;
-  background: linear-gradient(180deg, rgba(124, 92, 255, 0.08), transparent 34%);
+  background: linear-gradient(180deg, rgba(124,92,255,0.09), transparent 32%);
 }
 
-/* ---------- App column — tidy vertical rhythm ---------- */
 #root > div {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  max-width: 1140px;
+  max-width: 1150px;
   margin: 0 auto;
   width: 100%;
 }
@@ -285,30 +244,23 @@ body::after {
 /* =====================================================================
    Typography
    ===================================================================== */
-h1,
-h2,
-h3 {
-  font-family: var(--font-head);
-}
+h1, h2, h3 { font-family: var(--font-head); }
+p { margin: 0 0 10px; }
 
-p {
-  margin: 0 0 10px;
-}
-
-/* Hero title — animated gradient, glowing underline */
+/* Hero title */
 h1 {
   text-align: center;
-  font-size: clamp(32px, 4.6vw, 52px);
+  font-size: clamp(32px, 4.8vw, 54px);
   font-weight: 800;
-  letter-spacing: -0.025em;
+  letter-spacing: -0.028em;
   margin: 0.4em 0 0.3em;
   background: linear-gradient(95deg, #8f6bff 0%, #22d3ee 42%, #ff5fa2 82%, #8f6bff 100%);
-  background-size: 260% 100%;
+  background-size: 280% 100%;
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
   color: transparent;
-  filter: drop-shadow(0 8px 26px rgba(124, 92, 255, 0.32));
+  filter: drop-shadow(0 8px 28px rgba(124,92,255,0.35));
   animation:
     hero-in 0.9s cubic-bezier(0.16, 1, 0.3, 1) both,
     hue-drift 10s linear infinite;
@@ -317,25 +269,25 @@ h1 {
 h1::after {
   content: "";
   display: block;
-  width: 220px;
+  width: 230px;
   height: 3px;
   margin: 18px auto -2px;
   border-radius: 3px;
   background: linear-gradient(90deg, #8f6bff, #22d3ee, #ff5fa2);
-  box-shadow: 0 0 16px rgba(124, 92, 255, 0.45);
+  box-shadow: 0 0 18px rgba(124,92,255,0.48);
   animation: hr-flow 6s linear infinite;
 }
 
-/* Section headings — accent node + fading rule */
+/* Section headings */
 h2 {
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 1.42rem;
+  font-size: 1.44rem;
   font-weight: 700;
-  letter-spacing: -0.015em;
+  letter-spacing: -0.016em;
   color: var(--text-h);
-  margin: 26px 0 6px;
+  margin: 28px 0 6px;
   text-align: left;
   animation: fade-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
@@ -348,20 +300,20 @@ h2::before {
   transform: rotate(45deg);
   border-radius: 2px;
   background: linear-gradient(135deg, #8f6bff, #22d3ee);
-  box-shadow: 0 0 10px rgba(124, 92, 255, 0.5);
+  box-shadow: 0 0 12px rgba(124,92,255,0.55);
+  animation: diamond-spin 6s linear infinite;
 }
 
 h2::after {
   content: "";
-  flex: 0 1 150px;
+  flex: 0 1 160px;
   height: 2px;
   border-radius: 2px;
-  background: linear-gradient(90deg, rgba(124, 92, 255, 0.6), rgba(34, 211, 238, 0.3), transparent);
+  background: linear-gradient(90deg, rgba(124,92,255,0.65), rgba(34,211,238,0.32), transparent);
 }
 
-/* Sub-headings — pulsing cyan node */
 h3 {
-  font-size: 1.05rem;
+  font-size: 1.06rem;
   font-weight: 700;
   letter-spacing: 0.005em;
   color: var(--text-h);
@@ -379,40 +331,33 @@ h3::before {
   margin-right: 10px;
   vertical-align: middle;
   background: var(--acc-2);
-  box-shadow: 0 0 8px rgba(34, 211, 238, 0.6);
+  box-shadow: 0 0 9px rgba(34,211,238,0.65);
+  animation: orb-pulse 1.8s ease-in-out infinite;
 }
 
-/* Animated gradient dividers */
 hr {
   border: none;
   height: 2px;
-  margin: 30px 0 12px;
+  margin: 32px 0 14px;
   border-radius: 2px;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(124, 92, 255, 0.9),
-    rgba(34, 211, 238, 0.8),
-    rgba(255, 95, 162, 0.7),
-    transparent
-  );
-  background-size: 220% 100%;
+  background: linear-gradient(90deg, transparent, rgba(124,92,255,0.9), rgba(34,211,238,0.8), rgba(255,95,162,0.7), transparent);
+  background-size: 240% 100%;
   animation: hr-flow 7s linear infinite;
 }
 
 a {
   color: var(--acc-2);
   text-decoration: none;
-  border-bottom: 1px dashed rgba(34, 211, 238, 0.4);
+  border-bottom: 1px dashed rgba(34,211,238,0.4);
   transition: color 0.2s, border-color 0.2s;
 }
 a:hover {
   color: var(--acc-3);
-  border-bottom-color: rgba(255, 95, 162, 0.5);
+  border-bottom-color: rgba(255,95,162,0.5);
 }
 
 /* =====================================================================
-   Boot loader overlay (markup lives in index.html)
+   Boot loader overlay
    ===================================================================== */
 .app-loader {
   position: fixed;
@@ -432,7 +377,6 @@ a:hover {
   height: 116px;
 }
 
-/* spinning gradient rings */
 .app-loader .loader-ring {
   position: absolute;
   inset: 0;
@@ -441,57 +385,52 @@ a:hover {
 }
 .app-loader .loader-ring:nth-child(1) {
   border-top-color: #8f6bff;
-  border-bottom-color: rgba(124, 92, 255, 0.35);
+  border-bottom-color: rgba(124,92,255,0.35);
   animation: ring-spin 1s linear infinite;
 }
 .app-loader .loader-ring:nth-child(2) {
   border-right-color: #22d3ee;
-  border-left-color: rgba(34, 211, 238, 0.3);
+  border-left-color: rgba(34,211,238,0.3);
   animation: ring-spin 1.4s linear infinite reverse;
 }
 .app-loader .loader-ring:nth-child(3) {
   border-bottom-color: #ff5fa2;
-  border-top-color: rgba(255, 95, 162, 0.28);
+  border-top-color: rgba(255,95,162,0.28);
   animation: ring-spin 1.8s linear infinite;
 }
 
-/* pulsing core */
 .app-loader .loader-core {
   position: absolute;
   inset: 32px;
   border-radius: 50%;
   background: radial-gradient(circle, #ffffff, #8f6bff 45%, #22d3ee 92%);
-  box-shadow: 0 0 24px rgba(124, 92, 255, 0.7);
+  box-shadow: 0 0 26px rgba(124,92,255,0.75);
   animation: orb-pulse 1.1s ease-in-out infinite;
 }
 
-/* orbiting satellites */
 .app-loader .loader-sat {
   position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 10px;
-  height: 10px;
+  left: 50%; top: 50%;
+  width: 10px; height: 10px;
   margin: -5px;
   border-radius: 50%;
 }
 .app-loader .loader-sat:nth-child(5) {
   background: #ff5fa2;
-  box-shadow: 0 0 10px rgba(255, 95, 162, 0.8);
+  box-shadow: 0 0 10px rgba(255,95,162,0.8);
   animation: orbit-a 2.4s linear infinite;
 }
 .app-loader .loader-sat:nth-child(6) {
   background: #22d3ee;
-  box-shadow: 0 0 10px rgba(34, 211, 238, 0.8);
+  box-shadow: 0 0 10px rgba(34,211,238,0.8);
   animation: orbit-b 3.6s linear infinite;
 }
 .app-loader .loader-sat:nth-child(7) {
   background: #ffffff;
-  box-shadow: 0 0 10px rgba(148, 163, 230, 0.8);
+  box-shadow: 0 0 10px rgba(148,163,230,0.8);
   animation: orbit-c 4.8s linear infinite;
 }
 
-/* brand + progress */
 .app-loader .loader-brand {
   font: 800 17px/1.4 var(--font-head);
   letter-spacing: 0.01em;
@@ -501,21 +440,18 @@ a:hover {
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  color: transparent;
   animation: hue-drift 4s linear infinite;
 }
 
 .app-loader .loader-bar {
-  width: 210px;
-  height: 4px;
+  width: 210px; height: 4px;
   border-radius: 4px;
   overflow: hidden;
-  background: rgba(148, 163, 230, 0.16);
+  background: rgba(148,163,230,0.16);
 }
 .app-loader .loader-bar i {
   display: block;
-  width: 100%;
-  height: 100%;
+  width: 100%; height: 100%;
   border-radius: 4px;
   background: linear-gradient(90deg, #8f6bff, #22d3ee, #ff5fa2);
   background-size: 220% 100%;
@@ -530,41 +466,51 @@ form {
   flex-wrap: wrap;
   align-items: center;
   gap: 16px;
-  padding: 22px 26px;
+  padding: 24px 28px;
   border: 1px dashed var(--border-strong);
   border-radius: var(--radius-lg);
-  background: linear-gradient(150deg, var(--surface-soft), rgba(10, 13, 30, 0.22));
-  box-shadow: inset 0 0 46px rgba(255, 255, 255, 0.018);
+  background: linear-gradient(152deg, var(--surface-soft), rgba(8,11,28,0.24));
+  box-shadow: inset 0 0 50px rgba(255,255,255,0.016);
   animation: fade-up 0.5s ease both;
-  transition: border-color 0.3s, box-shadow 0.3s;
+  transition: border-color 0.3s, box-shadow 0.35s;
+  position: relative;
+  overflow: hidden;
 }
+
+form::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(120deg, rgba(143,107,255,0.06), rgba(34,211,238,0.04), rgba(255,95,162,0.03), rgba(143,107,255,0.05));
+  background-size: 300% 100%;
+  animation: hr-flow 12s linear infinite;
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+
+form:focus-within::before { opacity: 1; }
 
 form:focus-within {
-  border-color: rgba(124, 92, 255, 0.55);
-  box-shadow: inset 0 0 46px rgba(255, 255, 255, 0.02), 0 0 0 1px var(--border-acc), 0 0 26px rgba(124, 92, 255, 0.16);
+  border-color: rgba(124,92,255,0.58);
+  box-shadow:
+    inset 0 0 50px rgba(255,255,255,0.018),
+    0 0 0 1px var(--border-acc),
+    0 0 28px rgba(124,92,255,0.18);
 }
 
-form > * {
-  min-width: 190px;
-}
-form input[type="text"] {
-  flex: 1 1 300px;
-}
-form input[type="file"] {
-  flex: 1 1 340px;
-}
-form textarea {
-  flex: 1 1 100%;
-}
-form button {
-  flex: 0 0 auto;
-}
-form br {
-  display: none;
-}
+form > * { min-width: 190px; }
+form input[type="text"]  { flex: 1 1 300px; }
+form input[type="url"]   { flex: 1 1 300px; }
+form input[type="file"]  { flex: 1 1 340px; }
+form textarea            { flex: 1 1 100%; }
+form button              { flex: 0 0 auto; }
+form br                  { display: none; }
 
 /* ---------- Text inputs ---------- */
 input[type="text"],
+input[type="url"],
 textarea {
   width: 100%;
   font: 500 15px/1.5 var(--font-sans);
@@ -576,26 +522,23 @@ textarea {
   padding: 12px 16px;
   outline: none;
   resize: vertical;
-  transition: border-color 0.2s, box-shadow 0.3s, background 0.3s;
+  transition: border-color 0.22s, box-shadow 0.3s, background 0.3s, transform 0.2s;
 }
 
-textarea {
-  min-height: 96px;
-}
+textarea { min-height: 96px; }
 
 input[type="text"]:focus,
+input[type="url"]:focus,
 textarea:focus {
-  border-color: rgba(124, 92, 255, 0.7);
+  border-color: rgba(124,92,255,0.72);
   background: var(--field-bg-focus);
+  transform: translateY(-1px);
   box-shadow:
-    0 0 0 3px rgba(124, 92, 255, 0.15),
-    0 8px 26px -8px rgba(34, 211, 238, 0.2);
+    0 0 0 3px rgba(124,92,255,0.16),
+    0 8px 28px -8px rgba(34,211,238,0.22);
 }
 
-::placeholder {
-  color: var(--text-dim);
-  opacity: 0.78;
-}
+::placeholder { color: var(--text-dim); opacity: 0.78; }
 
 /* ---------- File input ---------- */
 input[type="file"] {
@@ -606,12 +549,10 @@ input[type="file"] {
   background: transparent;
   transition: background 0.25s;
 }
-input[type="file"]:hover {
-  background: rgba(34, 211, 238, 0.05);
-}
+input[type="file"]:hover { background: rgba(34,211,238,0.05); }
 
 input[type="file"]::file-selector-button {
-  background: linear-gradient(135deg, rgba(124, 92, 255, 0.2), rgba(34, 211, 238, 0.12));
+  background: linear-gradient(135deg, rgba(124,92,255,0.22), rgba(34,211,238,0.13));
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-pill);
   color: var(--text-h);
@@ -623,8 +564,8 @@ input[type="file"]::file-selector-button {
 }
 input[type="file"]::file-selector-button:hover {
   transform: translateY(-1px);
-  box-shadow: 0 0 0 1px var(--border-strong), 0 8px 22px -8px rgba(34, 211, 238, 0.25);
-  background: linear-gradient(135deg, rgba(124, 92, 255, 0.34), rgba(34, 211, 238, 0.26));
+  box-shadow: 0 0 0 1px var(--border-strong), 0 8px 22px -8px rgba(34,211,238,0.28);
+  background: linear-gradient(135deg, rgba(124,92,255,0.36), rgba(34,211,238,0.28));
 }
 
 /* =====================================================================
@@ -634,7 +575,7 @@ button {
   font-family: var(--font-head);
   font-weight: 700;
   font-size: 0.93rem;
-  letter-spacing: 0.012em;
+  letter-spacing: 0.013em;
   border: none;
   cursor: pointer;
   display: inline-flex;
@@ -652,16 +593,16 @@ button {
     border-color 0.25s,
     color 0.2s;
   will-change: transform;
+  overflow: hidden;
 }
 
-/* shine sweep on every button hover */
 button::after {
   content: "";
   position: absolute;
   inset: 0;
   border-radius: inherit;
   pointer-events: none;
-  background: linear-gradient(115deg, transparent 35%, rgba(255, 255, 255, 0.32) 50%, transparent 65%);
+  background: linear-gradient(115deg, transparent 35%, rgba(255,255,255,0.34) 50%, transparent 65%);
   background-size: 320% 100%;
   opacity: 0;
   transition: opacity 0.25s;
@@ -670,37 +611,35 @@ button:hover::after {
   opacity: 1;
   animation: shine-sweep 0.7s ease;
 }
-button:active {
-  transform: translateY(1px) scale(0.97);
-}
+button:active { transform: translateY(1px) scale(0.97); }
 
 /* primary / submit CTA */
 button[type="submit"] {
   color: #ffffff;
   background: linear-gradient(135deg, #8f6bff 0%, #6f5cf0 34%, #22d3ee 100%);
-  background-size: 190% 100%;
+  background-size: 200% 100%;
   padding: 12px 26px;
   box-shadow:
-    0 0 0 1px rgba(143, 107, 255, 0.55),
-    0 10px 30px -8px rgba(124, 92, 255, 0.55),
-    0 0 20px rgba(34, 211, 238, 0.22);
+    0 0 0 1px rgba(143,107,255,0.55),
+    0 10px 32px -8px rgba(124,92,255,0.58),
+    0 0 22px rgba(34,211,238,0.24);
   animation: submit-glow 3.2s ease-in-out infinite;
 }
 button[type="submit"]:hover {
-  transform: translateY(-2px) scale(1.015);
+  transform: translateY(-2px) scale(1.016);
   background-position: 100% 0;
   box-shadow:
-    0 0 0 1px rgba(143, 107, 255, 0.75),
-    0 16px 40px -10px rgba(124, 92, 255, 0.7),
-    0 0 30px rgba(34, 211, 238, 0.35);
+    0 0 0 1px rgba(143,107,255,0.78),
+    0 16px 42px -10px rgba(124,92,255,0.72),
+    0 0 32px rgba(34,211,238,0.38);
 }
 button[type="submit"]:focus-visible {
-  box-shadow: 0 0 0 3px rgba(124, 92, 255, 0.35), 0 10px 30px -8px rgba(124, 92, 255, 0.6);
+  box-shadow: 0 0 0 3px rgba(124,92,255,0.38), 0 10px 30px -8px rgba(124,92,255,0.62);
 }
 
 /* ghost / secondary chips */
 button[type="button"] {
-  background: linear-gradient(135deg, var(--chip-bg), rgba(34, 211, 238, 0.08));
+  background: linear-gradient(135deg, var(--chip-bg), rgba(34,211,238,0.08));
   border: 1px solid var(--border-strong);
   color: var(--text-h);
   padding: 9px 17px;
@@ -708,10 +647,11 @@ button[type="button"] {
 }
 button[type="button"]:hover {
   transform: translateY(-1px);
-  background: linear-gradient(135deg, rgba(124, 92, 255, 0.28), rgba(34, 211, 238, 0.18));
-  border-color: rgba(124, 92, 255, 0.6);
-  box-shadow: 0 0 0 1px var(--border-acc), 0 12px 28px -10px rgba(124, 92, 255, 0.4);
+  background: linear-gradient(135deg, rgba(124,92,255,0.30), rgba(34,211,238,0.20));
+  border-color: rgba(124,92,255,0.62);
+  box-shadow: 0 0 0 1px var(--border-acc), 0 12px 30px -10px rgba(124,92,255,0.42);
 }
+
 
 /* =====================================================================
    Landing dashboard — project cards
@@ -721,7 +661,7 @@ button[type="button"]:hover {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  background: linear-gradient(160deg, rgba(124, 92, 255, 0.13), transparent 38%), var(--panel-bg);
+  background: linear-gradient(162deg, rgba(124,92,255,0.14), transparent 40%), var(--panel-bg);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 18px 24px;
@@ -731,14 +671,13 @@ button[type="button"]:hover {
     box-shadow 0.3s,
     border-color 0.3s;
   animation: fade-up 0.55s ease both;
+  overflow: hidden;
 }
 
 #root > div > div::before {
   content: "";
   position: absolute;
-  top: -1px;
-  left: 18px;
-  right: 18px;
+  top: -1px; left: 18px; right: 18px;
   height: 2px;
   border-radius: 2px;
   pointer-events: none;
@@ -747,21 +686,30 @@ button[type="button"]:hover {
   animation: hr-flow 5s linear infinite;
 }
 
-#root > div > div:hover {
-  transform: translateY(-4px) scale(1.012);
-  border-color: rgba(124, 92, 255, 0.55);
-  box-shadow: var(--shadow-md), 0 0 30px rgba(124, 92, 255, 0.25);
+#root > div > div::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(120deg, rgba(143,107,255,0.07), rgba(34,211,238,0.04), rgba(255,95,162,0.03), rgba(143,107,255,0.06));
+  background-size: 300% 100%;
+  animation: hr-flow 14s linear infinite;
+  opacity: 0;
+  transition: opacity 0.4s;
 }
 
-#root > div > div:nth-child(4n + 2) {
-  animation-delay: 0.06s;
+#root > div > div:hover {
+  transform: translateY(-4px) scale(1.013);
+  border-color: rgba(124,92,255,0.58);
+  box-shadow: var(--shadow-md), 0 0 32px rgba(124,92,255,0.28);
 }
-#root > div > div:nth-child(4n + 3) {
-  animation-delay: 0.12s;
-}
-#root > div > div:nth-child(4n + 4) {
-  animation-delay: 0.18s;
-}
+
+#root > div > div:hover::after { opacity: 1; }
+
+#root > div > div:nth-child(4n+2) { animation-delay: 0.06s; }
+#root > div > div:nth-child(4n+3) { animation-delay: 0.12s; }
+#root > div > div:nth-child(4n+4) { animation-delay: 0.18s; }
 
 #root > div > div p {
   color: var(--text-dim);
@@ -770,20 +718,18 @@ button[type="button"]:hover {
   margin: 8px 0 0;
 }
 
-/* "Selected project" badge */
 #root > div > div p + p {
   display: inline-block;
   margin: 10px 0 0;
   padding: 4px 14px;
   border-radius: 999px;
-  border: 1px dashed rgba(34, 211, 238, 0.55);
-  background: rgba(34, 211, 238, 0.09);
+  border: 1px dashed rgba(34,211,238,0.55);
+  background: rgba(34,211,238,0.09);
   color: var(--cyan-tint);
   font-size: 0.84rem;
   animation: pop-in 0.35s ease both;
 }
 
-/* project open button */
 #root > div > div h3 button {
   font: 700 1.05rem var(--font-head);
   color: var(--text-h);
@@ -800,13 +746,13 @@ button[type="button"]:hover {
 #root > div > div h3 button::before {
   content: "🗂";
   font-size: 1.02rem;
-  filter: drop-shadow(0 0 6px rgba(124, 92, 255, 0.5));
+  filter: drop-shadow(0 0 6px rgba(124,92,255,0.52));
 }
 
 #root > div > div h3 button:hover {
-  background: rgba(124, 92, 255, 0.16);
+  background: rgba(124,92,255,0.18);
   color: #ffffff;
-  box-shadow: 0 0 16px rgba(124, 92, 255, 0.35);
+  box-shadow: 0 0 18px rgba(124,92,255,0.38);
   transform: translateX(3px);
 }
 
@@ -823,38 +769,36 @@ button[type="button"]:hover {
   border-radius: 999px;
   font-size: 0.9rem;
   color: var(--text-h);
-  background: linear-gradient(135deg, rgba(124, 92, 255, 0.14), rgba(34, 211, 238, 0.08));
-  border: 1px solid rgba(124, 92, 255, 0.35);
+  background: linear-gradient(135deg, rgba(124,92,255,0.15), rgba(34,211,238,0.09));
+  border: 1px solid rgba(124,92,255,0.36);
   animation: pill-pulse 2.6s ease-in-out infinite, pop-in 0.4s ease both;
 }
 
 /* =====================================================================
-   Workspace — the selected project's control room
+   Workspace — selected project control room
    ===================================================================== */
 #root section {
   position: relative;
   display: block;
-  padding: 30px 28px 26px;
+  padding: 32px 30px 28px;
   border-radius: calc(var(--radius-xl) + 4px);
   background:
-    linear-gradient(165deg, rgba(26, 32, 68, 0.3), rgba(10, 13, 30, 0.16) 55%, rgba(124, 92, 255, 0.07));
-  border: 1px solid rgba(124, 92, 255, 0.24);
+    linear-gradient(168deg, rgba(24,30,66,0.32), rgba(8,11,28,0.18) 55%, rgba(124,92,255,0.08));
+  border: 1px solid rgba(124,92,255,0.26);
   box-shadow: var(--shadow-md);
   animation: rise-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
   transition: box-shadow 0.4s, border-color 0.4s;
 }
 
 #root section:hover {
-  box-shadow: var(--shadow-md), 0 0 34px rgba(124, 92, 255, 0.18);
+  box-shadow: var(--shadow-md), 0 0 38px rgba(124,92,255,0.20);
 }
 
 /* left accent rail */
 #root section::before {
   content: "";
   position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
+  top: 0; bottom: 0; left: 0;
   width: 4px;
   border-radius: 4px 0 0 4px;
   pointer-events: none;
@@ -863,25 +807,15 @@ button[type="button"]:hover {
   animation: rail-flow 9s linear infinite;
 }
 
-/* ---------- Search form + results ---------- */
-#root section form input[type="text"] {
-  flex: 1 1 320px;
-}
+#root section form input[type="text"] { flex: 1 1 320px; }
+#root section form input[type="text"] { padding: 12px 16px !important; }
+#root div[style*="margin-top: 15px"] { margin-top: 6px !important; }
 
-/* normalize legacy inline padding so every field aligns */
-#root section form input[type="text"] {
-  padding: 12px 16px !important;
-}
-
-#root div[style*="margin-top: 15px"] {
-  margin-top: 6px !important;
-}
-
-/* result cards (inline padding: 12px, legacy #555 border) */
+/* result cards */
 #root section div[style*="padding: 12px"] {
   position: relative;
   margin-bottom: 12px;
-  background: linear-gradient(150deg, var(--panel-bg-2), rgba(9, 12, 28, 0.4));
+  background: linear-gradient(152deg, var(--panel-bg-2), rgba(7,10,26,0.42));
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
@@ -891,21 +825,18 @@ button[type="button"]:hover {
 
 #root section div[style*="padding: 12px"]:hover {
   transform: translateY(-1px);
-  border-color: rgba(124, 92, 255, 0.5);
-  box-shadow: var(--shadow-sm), 0 0 18px rgba(124, 92, 255, 0.2);
+  border-color: rgba(124,92,255,0.52);
+  box-shadow: var(--shadow-sm), 0 0 20px rgba(124,92,255,0.22);
 }
 
-/* compact code snippet inside a result card */
 #root section div[style*="padding: 12px"] pre {
   max-height: 220px;
   font-size: 0.78rem;
   padding: 10px 14px;
 }
 
-/* ---------- Architecture action button ---------- */
-#root section > button[type="button"] {
-  margin: 4px 0 8px;
-}
+#root section > button[type="button"] { margin: 4px 0 8px; }
+
 
 /* =====================================================================
    Code files — toolbar rows
@@ -917,28 +848,26 @@ button[type="button"]:hover {
   gap: 10px;
   padding: 12px 16px;
   border-radius: var(--radius-md);
-  background: linear-gradient(110deg, rgba(124, 92, 255, 0.1), rgba(34, 211, 238, 0.05));
-  border: 1px solid rgba(124, 92, 255, 0.22);
+  background: linear-gradient(112deg, rgba(124,92,255,0.11), rgba(34,211,238,0.06));
+  border: 1px solid rgba(124,92,255,0.24);
   transition: background 0.25s, border-color 0.25s, box-shadow 0.3s;
   animation: fade-up 0.45s ease both;
 }
 
 #root section > div > div:not([style]):has(> button):hover {
-  background: linear-gradient(110deg, rgba(124, 92, 255, 0.16), rgba(34, 211, 238, 0.08));
-  border-color: rgba(124, 92, 255, 0.45);
-  box-shadow: 0 0 20px rgba(124, 92, 255, 0.14);
+  background: linear-gradient(112deg, rgba(124,92,255,0.18), rgba(34,211,238,0.10));
+  border-color: rgba(124,92,255,0.48);
+  box-shadow: 0 0 22px rgba(124,92,255,0.16);
 }
 
-/* file name button (first child) — read as a heading-like chip */
 #root section > div > div:not([style]):has(> button) > button:first-child {
   font-weight: 750;
   padding: 8px 16px;
-  background: linear-gradient(135deg, rgba(124, 92, 255, 0.2), rgba(34, 211, 238, 0.1));
-  border: 1px solid rgba(124, 92, 255, 0.4);
+  background: linear-gradient(135deg, rgba(124,92,255,0.22), rgba(34,211,238,0.12));
+  border: 1px solid rgba(124,92,255,0.42);
   color: #ffffff;
 }
 
-/* remaining AI action buttons — compact ghost chips */
 #root section > div > div:not([style]):has(> button) > button:not(:first-child) {
   padding: 7px 14px;
   font-size: 0.82rem;
@@ -946,71 +875,58 @@ button[type="button"]:hover {
 }
 
 /* =====================================================================
-   AI result panels — the legacy inline `border-radius: 8px` divs
-   React renders #555 as rgb(85, 85, 85), so we hook the stable part.
+   AI result panels
    ===================================================================== */
 #root section div[style*="border-radius: 8px"] {
   position: relative;
-  background: linear-gradient(155deg, var(--panel-bg), rgba(9, 12, 28, 0.42));
+  background: linear-gradient(158deg, var(--panel-bg), rgba(7,10,26,0.44));
   border: 1px solid var(--panel-border) !important;
   border-radius: var(--radius-lg) !important;
-  box-shadow: var(--shadow-md), 0 0 28px rgba(124, 92, 255, 0.14);
-  backdrop-filter: blur(10px);
+  box-shadow: var(--shadow-md), 0 0 30px rgba(124,92,255,0.16);
+  backdrop-filter: blur(12px);
   transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.3s, border-color 0.3s;
   animation: pop-in 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+  overflow: hidden;
 }
 
-/* slow aurora sheen washing across every AI panel */
 #root section div[style*="border-radius: 8px"]::before {
   content: "";
   position: absolute;
   inset: 0;
   border-radius: inherit;
   pointer-events: none;
-  background: linear-gradient(
-    120deg,
-    rgba(143, 107, 255, 0.16),
-    rgba(34, 211, 238, 0.1),
-    rgba(255, 95, 162, 0.08),
-    rgba(143, 107, 255, 0.14)
-  );
+  background: linear-gradient(122deg,
+    rgba(143,107,255,0.16),
+    rgba(34,211,238,0.10),
+    rgba(255,95,162,0.08),
+    rgba(143,107,255,0.14));
   background-size: 300% 100%;
   animation: hr-flow 9s linear infinite;
 }
 
-/* corner glint */
 #root section div[style*="border-radius: 8px"]::after {
   content: "";
   position: absolute;
-  top: 0;
-  right: 0;
-  width: 3px;
-  height: 3px;
+  top: 0; right: 0;
+  width: 3px; height: 3px;
   border-radius: 50%;
   background: #22d3ee;
-  box-shadow: 0 0 10px rgba(34, 211, 238, 0.7);
+  box-shadow: 0 0 12px rgba(34,211,238,0.75);
   animation: orb-pulse 1.4s ease-in-out infinite;
   pointer-events: none;
 }
 
 #root section div[style*="border-radius: 8px"]:hover {
   transform: translateY(-2px);
-  border-color: rgba(143, 107, 255, 0.6);
-  box-shadow: var(--shadow-md), 0 0 36px rgba(124, 92, 255, 0.26);
+  border-color: rgba(143,107,255,0.62) !important;
+  box-shadow: var(--shadow-md), 0 0 40px rgba(124,92,255,0.28);
 }
 
-/* panel headings inside AI panels get a compact size */
 #root section div[style*="border-radius: 8px"] > h2,
-#root section div[style*="border-radius: 8px"] > h3 {
-  margin-top: 0;
-}
+#root section div[style*="border-radius: 8px"] > h3 { margin-top: 0; }
 
-/* "File: path" tag line */
-#root section div[style*="border-radius: 8px"] > p > strong:first-child {
-  color: var(--cyan-tint);
-}
+#root section div[style*="border-radius: 8px"] > p > strong:first-child { color: var(--cyan-tint); }
 
-/* Close buttons inside panels — full width, gentle */
 #root section div[style*="border-radius: 8px"] > button[type="button"] {
   display: flex;
   width: 100%;
@@ -1018,36 +934,21 @@ button[type="button"]:hover {
   margin: 12px 0 0;
 }
 
-/* ---------- Markdown typography inside the app ---------- */
-#root section p {
-  line-height: 1.65;
-}
-
-#root section ul,
-#root section ol {
-  padding-left: 1.4em;
-}
-
-#root section li {
-  margin: 0.25em 0;
-  line-height: 1.5;
-}
-
+/* Markdown typography */
+#root section p { line-height: 1.65; }
+#root section ul, #root section ol { padding-left: 1.4em; }
+#root section li { margin: 0.25em 0; line-height: 1.5; }
 #root section blockquote {
   border-left: 3px solid var(--acc-2);
   border-radius: 0 10px 10px 0;
   padding: 10px 16px;
-  background: rgba(34, 211, 238, 0.06);
+  background: rgba(34,211,238,0.06);
   color: var(--text);
 }
-
-#root section strong {
-  color: var(--text-h);
-  font-weight: 650;
-}
+#root section strong { color: var(--text-h); font-weight: 650; }
 
 /* =====================================================================
-   Dependency cards — directional chips
+   Dependency cards
    ===================================================================== */
 #root section div[style*="padding: 15px"] > div {
   display: flex;
@@ -1058,42 +959,39 @@ button[type="button"]:hover {
   padding: 4px 8px;
 }
 
-#root section div[style*="padding: 15px"] > div:first-child > button {
-  font-weight: 700;
-}
+#root section div[style*="padding: 15px"] > div:first-child > button { font-weight: 700; }
 
 #root section div[style*="padding: 15px"] > div span {
   font-family: var(--font-mono);
   font-size: 0.78rem;
   color: var(--cyan-tint);
-  background: rgba(34, 211, 238, 0.08);
-  border: 1px dashed rgba(34, 211, 238, 0.35);
+  background: rgba(34,211,238,0.08);
+  border: 1px dashed rgba(34,211,238,0.36);
   border-radius: 999px;
   padding: 2px 10px;
 }
 
 /* =====================================================================
-   Code viewer — terminal window with sticky traffic-light dots
+   Code viewer — terminal window
    ===================================================================== */
 pre {
   position: relative;
   background: linear-gradient(180deg, var(--code-bg-1), var(--code-bg-2));
-  border: 1px solid rgba(120, 140, 220, 0.24);
+  border: 1px solid rgba(120,140,220,0.22);
   border-radius: var(--radius-md);
   color: var(--code-ink);
   font-family: var(--font-mono);
   font-size: 0.86rem;
-  line-height: 1.7;
+  line-height: 1.72;
   padding: 16px 20px;
   max-height: 620px;
   overflow: auto;
   tab-size: 4;
   box-shadow:
-    inset 0 0 40px rgba(124, 92, 255, 0.04),
-    0 0 26px rgba(124, 92, 255, 0.1);
+    inset 0 0 44px rgba(124,92,255,0.04),
+    0 0 28px rgba(124,92,255,0.11);
 }
 
-/* window controls that stay pinned while the code scrolls */
 pre::before {
   content: "";
   position: sticky;
@@ -1102,10 +1000,10 @@ pre::before {
   height: 14px;
   margin: 0 0 12px;
   background-image:
-    radial-gradient(circle at 6px 7px, #ff5fa2 3px, transparent 4px),
+    radial-gradient(circle at 6px 7px,  #ff5fa2 3px, transparent 4px),
     radial-gradient(circle at 20px 7px, #ffb347 3px, transparent 4px),
     radial-gradient(circle at 34px 7px, #22d3ee 3px, transparent 4px),
-    radial-gradient(90% 70% at 70% 40%, rgba(124, 92, 255, 0.06), transparent 80%);
+    radial-gradient(90% 70% at 70% 40%, rgba(124,92,255,0.06), transparent 80%);
   background-size: 40px 14px, 40px 14px, 40px 14px, 100% 100%;
   background-repeat: repeat-x, repeat-x, repeat-x, no-repeat;
 }
@@ -1119,7 +1017,6 @@ pre code {
   padding: 0;
 }
 
-/* inline code */
 code {
   font-family: var(--font-mono);
   font-size: 0.84em;
@@ -1135,40 +1032,35 @@ code {
    ===================================================================== */
 #source-viewer {
   position: relative;
-  background: linear-gradient(150deg, var(--panel-bg-2), rgba(9, 12, 28, 0.4));
+  background: linear-gradient(152deg, var(--panel-bg-2), rgba(7,10,26,0.42));
   border: 1px solid var(--panel-border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-md);
-  padding: 18px 22px;
+  padding: 20px 24px;
   animation: rise-in 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-#source-viewer pre {
-  max-height: 480px;
-}
+#source-viewer pre { max-height: 480px; }
 
 #source-viewer pre div {
   transition: background 0.15s;
   border-radius: 4px;
   padding: 0 10px;
 }
-#source-viewer pre div:hover {
-  background: rgba(124, 92, 255, 0.07);
-}
+#source-viewer pre div:hover { background: rgba(124,92,255,0.08); }
 
-/* line numbers */
 #source-viewer pre div > span:first-child {
   display: inline-block;
   min-width: 46px;
   padding-right: 12px;
   text-align: right;
   user-select: none;
-  color: rgba(133, 155, 205, 0.5);
+  color: rgba(133,155,205,0.48);
 }
 
+
 /* =====================================================================
-   Chat — modern conversation with aligned participant bubbles
-   Structure per turn: div(You) > div(AI) > div(Sources)? > hr
+   Chat — conversation bubbles
    ===================================================================== */
 #root section div[style*="margin-bottom: 30px"] {
   background: transparent;
@@ -1178,17 +1070,16 @@ code {
   padding: 8px 10px;
 }
 
-/* subtle "conversation" divider between turns */
 #root section div[style*="margin-bottom: 30px"] hr {
   border: none;
   height: 1px;
   margin: 6px 0 0;
-  background: linear-gradient(90deg, transparent, rgba(148, 163, 230, 0.28), transparent);
+  background: linear-gradient(90deg, transparent, rgba(148,163,230,0.28), transparent);
   background-size: 220% 100%;
   animation: hr-flow 8s linear infinite;
 }
 
-/* ---- User turn: right aligned violet bubble ---- */
+/* User bubble */
 #root section div[style*="margin-bottom: 30px"] > div:first-child {
   display: flex;
   flex-direction: column;
@@ -1206,9 +1097,9 @@ code {
   color: #ffffff;
   padding: 5px 14px;
   border-radius: 999px;
-  background: linear-gradient(135deg, rgba(143, 107, 255, 0.95), rgba(110, 92, 240, 0.85));
-  border: 1px solid rgba(143, 107, 255, 0.6);
-  box-shadow: 0 0 12px rgba(124, 92, 255, 0.35);
+  background: linear-gradient(135deg, rgba(143,107,255,0.95), rgba(110,92,240,0.85));
+  border: 1px solid rgba(143,107,255,0.62);
+  box-shadow: 0 0 14px rgba(124,92,255,0.38);
   animation: pop-in 0.35s ease both;
 }
 
@@ -1216,22 +1107,22 @@ code {
   max-width: 86%;
   margin: 0;
   color: var(--text-h);
-  background: linear-gradient(135deg, rgba(124, 92, 255, 0.2), rgba(34, 211, 238, 0.08));
-  border: 1px solid rgba(124, 92, 255, 0.4);
+  background: linear-gradient(135deg, rgba(124,92,255,0.22), rgba(34,211,238,0.09));
+  border: 1px solid rgba(124,92,255,0.42);
   border-radius: 16px 16px 4px 16px;
   padding: 12px 16px;
   animation: rise-in 0.4s ease both;
 }
 
-/* ---- AI turn: left aligned cyan-tinted panel ---- */
+/* AI bubble */
 #root section div[style*="margin-bottom: 30px"] > div:nth-child(2) {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  background: linear-gradient(150deg, rgba(34, 211, 238, 0.07), rgba(124, 92, 255, 0.08), rgba(10, 13, 30, 0.1));
-  border: 1px solid rgba(34, 211, 238, 0.22);
+  background: linear-gradient(152deg, rgba(34,211,238,0.08), rgba(124,92,255,0.09), rgba(8,11,28,0.12));
+  border: 1px solid rgba(34,211,238,0.24);
   border-radius: 16px;
-  padding: 13px 16px;
+  padding: 14px 18px;
   animation: rise-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
@@ -1245,27 +1136,21 @@ code {
   color: var(--text-h);
   padding: 5px 14px;
   border-radius: 999px;
-  background: linear-gradient(135deg, rgba(34, 211, 238, 0.2), rgba(124, 92, 255, 0.12));
-  border: 1px solid rgba(34, 211, 238, 0.45);
-  box-shadow: 0 0 12px rgba(34, 211, 238, 0.3);
+  background: linear-gradient(135deg, rgba(34,211,238,0.22), rgba(124,92,255,0.14));
+  border: 1px solid rgba(34,211,238,0.46);
+  box-shadow: 0 0 12px rgba(34,211,238,0.32);
   animation: pop-in 0.35s ease both;
 }
 
-/* AI markdown content styling */
-#root section div[style*="margin-bottom: 30px"] > div:nth-child(2) > p {
-  color: var(--text-h);
-  margin: 0 0 8px;
-}
-#root section div[style*="margin-bottom: 30px"] > div:nth-child(2) > * + * {
-  margin-top: 4px;
-}
+#root section div[style*="margin-bottom: 30px"] > div:nth-child(2) > p { color: var(--text-h); margin: 0 0 8px; }
+#root section div[style*="margin-bottom: 30px"] > div:nth-child(2) > * + * { margin-top: 4px; }
 
-/* ---- Sources row ---- */
+/* Sources row */
 #root section div[style*="margin-bottom: 30px"] > div:nth-child(3) {
   margin-top: 10px;
-  border: 1px dashed rgba(34, 211, 238, 0.4);
+  border: 1px dashed rgba(34,211,238,0.42);
   border-radius: 14px;
-  background: rgba(10, 13, 31, 0.42);
+  background: rgba(8,11,28,0.44);
   padding: 10px 14px;
   animation: fade-up 0.45s ease both;
 }
@@ -1274,307 +1159,155 @@ code {
   font-size: 0.9rem;
   padding: 3px 12px;
   border-radius: 999px;
-  background: rgba(255, 95, 162, 0.12);
-  border: 1px solid rgba(255, 95, 162, 0.3);
+  background: rgba(255,95,162,0.12);
+  border: 1px solid rgba(255,95,162,0.32);
   color: var(--pink-tint);
   margin: 0 0 8px;
 }
 
-#root section div[style*="margin-bottom: 30px"] > div:nth-child(3) > div {
-  margin: 6px 0;
-}
+#root section div[style*="margin-bottom: 30px"] > div:nth-child(3) > div { margin: 6px 0; }
 
 #root section div[style*="margin-bottom: 30px"] > div:nth-child(3) > div > button {
   padding: 6px 14px;
   font-size: 0.8rem;
-  background: rgba(124, 92, 255, 0.13);
-  border: 1px solid rgba(124, 92, 255, 0.35);
+  background: rgba(124,92,255,0.14);
+  border: 1px solid rgba(124,92,255,0.36);
   animation: fade-up 0.3s ease both;
 }
 
-/* AI markup inside panels (ReactMarkdown) — consistent spacing */
-#root section div[style*="margin-bottom: 30px"] > div:nth-child(2) pre {
-  max-height: 380px;
-}
+#root section div[style*="margin-bottom: 30px"] > div:nth-child(2) pre { max-height: 380px; }
 
 /* =====================================================================
    Keyframes
    ===================================================================== */
 @keyframes root-in {
-  from {
-    opacity: 0;
-    transform: translateY(34px) scale(0.985);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
+  from { opacity: 0; transform: translateY(36px) scale(0.984); }
+  to   { opacity: 1; transform: none; }
 }
-
 @keyframes hero-in {
-  from {
-    opacity: 0;
-    transform: translateY(22px) scale(0.96);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
+  from { opacity: 0; transform: translateY(24px) scale(0.96); }
+  to   { opacity: 1; transform: none; }
 }
-
 @keyframes fade-up {
-  from {
-    opacity: 0;
-    transform: translateY(16px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: none; }
 }
-
 @keyframes rise-in {
-  from {
-    opacity: 0;
-    transform: translateY(24px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: none; }
 }
-
 @keyframes pop-in {
-  from {
-    opacity: 0;
-    transform: scale(0.94);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
+  from { opacity: 0; transform: scale(0.93); }
+  to   { opacity: 1; transform: none; }
 }
-
 @keyframes hue-drift {
-  from {
-    background-position: 0% 50%;
-  }
-  to {
-    background-position: 200% 50%;
-  }
+  from { background-position: 0% 50%; }
+  to   { background-position: 200% 50%; }
 }
-
 @keyframes hr-flow {
-  from {
-    background-position: 100% 0;
-  }
-  to {
-    background-position: 0% 0;
-  }
+  from { background-position: 100% 0; }
+  to   { background-position: 0% 0; }
 }
-
 @keyframes shine-sweep {
-  from {
-    background-position: 150% 0;
-  }
-  to {
-    background-position: -150% 0;
-  }
+  from { background-position: 150% 0; }
+  to   { background-position: -150% 0; }
 }
-
+@keyframes diamond-spin {
+  0%   { transform: rotate(45deg) scale(1); }
+  50%  { transform: rotate(225deg) scale(1.3); }
+  100% { transform: rotate(405deg) scale(1); }
+}
 @keyframes blob-drift-a {
-  0% {
-    transform: translate(0, 0) scale(1);
-  }
-  33% {
-    transform: translate(90px, -70px) scale(1.18);
-  }
-  66% {
-    transform: translate(-70px, 60px) scale(0.9);
-  }
-  100% {
-    transform: translate(0, 0) scale(1);
-  }
+  0%   { transform: translate(0,0) scale(1); }
+  33%  { transform: translate(90px,-70px) scale(1.18); }
+  66%  { transform: translate(-70px,60px) scale(0.9); }
+  100% { transform: translate(0,0) scale(1); }
 }
-
 @keyframes blob-drift-b {
-  0% {
-    transform: translate(0, 0) scale(1);
-  }
-  33% {
-    transform: translate(-110px, -40px) scale(1.12);
-  }
-  66% {
-    transform: translate(60px, 90px) scale(0.85);
-  }
-  100% {
-    transform: translate(0, 0) scale(1);
-  }
+  0%   { transform: translate(0,0) scale(1); }
+  33%  { transform: translate(-110px,-40px) scale(1.12); }
+  66%  { transform: translate(60px,90px) scale(0.85); }
+  100% { transform: translate(0,0) scale(1); }
 }
-
 @keyframes blob-drift-c {
-  0% {
-    transform: translate(0, 0) scale(1);
-  }
-  25% {
-    transform: translate(-60px, 40px) scale(1.05);
-  }
-  50% {
-    transform: translate(50px, -30px) scale(1.1);
-  }
-  75% {
-    transform: translate(-30px, -60px) scale(1.02);
-  }
-  100% {
-    transform: translate(0, 0) scale(1);
-  }
+  0%   { transform: translate(0,0) scale(1); }
+  25%  { transform: translate(-60px,40px) scale(1.05); }
+  50%  { transform: translate(50px,-30px) scale(1.1); }
+  75%  { transform: translate(-30px,-60px) scale(1.02); }
+  100% { transform: translate(0,0) scale(1); }
 }
-
-@keyframes ring-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
+@keyframes ring-spin { to { transform: rotate(360deg); } }
 @keyframes orb-pulse {
-  0%,
-  100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.12);
-  }
+  0%,100% { transform: scale(1); }
+  50%      { transform: scale(1.14); }
 }
-
 @keyframes pill-pulse {
-  0%,
-  100% {
-    box-shadow: 0 0 8px rgba(124, 92, 255, 0.25);
-  }
-  50% {
-    box-shadow: 0 0 20px rgba(124, 92, 255, 0.5), 0 0 8px rgba(34, 211, 238, 0.3);
-  }
+  0%,100% { box-shadow: 0 0 8px rgba(124,92,255,0.25); }
+  50%      { box-shadow: 0 0 22px rgba(124,92,255,0.52), 0 0 8px rgba(34,211,238,0.32); }
 }
-
 @keyframes rail-flow {
-  from {
-    background-position: 0 -100%;
-  }
-  to {
-    background-position: 0 300%;
-  }
+  from { background-position: 0 -100%; }
+  to   { background-position: 0 300%; }
 }
-
 @keyframes star-drift {
-  from {
-    transform: translateY(0);
-  }
-  to {
-    transform: translateY(180px);
-  }
+  from { transform: translateY(0); }
+  to   { transform: translateY(180px); }
 }
-
 @keyframes star-twinkle {
-  0%,
-  100% {
-    opacity: 0.55;
-  }
-  50% {
-    opacity: 1;
-  }
+  0%,100% { opacity: 0.55; }
+  50%      { opacity: 1; }
 }
-
 @keyframes orbit-a {
-  from {
-    transform: rotate(0deg) translateX(44px) rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg) translateX(44px) rotate(-360deg);
-  }
+  from { transform: rotate(0deg) translateX(44px) rotate(0deg); }
+  to   { transform: rotate(360deg) translateX(44px) rotate(-360deg); }
 }
-
 @keyframes orbit-b {
-  from {
-    transform: rotate(0deg) translateX(52px) rotate(0deg);
-  }
-  to {
-    transform: rotate(-360deg) translateX(52px) rotate(360deg);
-  }
+  from { transform: rotate(0deg) translateX(52px) rotate(0deg); }
+  to   { transform: rotate(-360deg) translateX(52px) rotate(360deg); }
 }
-
 @keyframes orbit-c {
-  from {
-    transform: rotate(0deg) translateX(38px) rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg) translateX(38px) rotate(-360deg);
-  }
+  from { transform: rotate(0deg) translateX(38px) rotate(0deg); }
+  to   { transform: rotate(360deg) translateX(38px) rotate(-360deg); }
 }
-
 @keyframes loader-fill {
-  0% {
-    transform: translateX(-100%);
-  }
-  55% {
-    transform: translateX(0%);
-  }
-  100% {
-    transform: translateX(100%);
-  }
+  0%   { transform: translateX(-100%); }
+  55%  { transform: translateX(0%); }
+  100% { transform: translateX(100%); }
 }
-
 @keyframes loader-hide {
-  to {
-    opacity: 0;
-    visibility: hidden;
-    pointer-events: none;
-  }
+  to { opacity: 0; visibility: hidden; pointer-events: none; }
 }
-
 @keyframes submit-glow {
-  0%,
-  100% {
-    box-shadow: 0 0 0 1px rgba(143, 107, 255, 0.55), 0 10px 30px -8px rgba(124, 92, 255, 0.55), 0 0 20px rgba(34, 211, 238, 0.22);
+  0%,100% {
+    box-shadow:
+      0 0 0 1px rgba(143,107,255,0.55),
+      0 10px 30px -8px rgba(124,92,255,0.55),
+      0 0 20px rgba(34,211,238,0.22);
   }
   50% {
-    box-shadow: 0 0 0 1px rgba(143, 107, 255, 0.8), 0 14px 38px -8px rgba(124, 92, 255, 0.8), 0 0 34px rgba(34, 211, 238, 0.42);
+    box-shadow:
+      0 0 0 1px rgba(143,107,255,0.82),
+      0 14px 40px -8px rgba(124,92,255,0.82),
+      0 0 36px rgba(34,211,238,0.44);
   }
 }
+@keyframes float-y {
+  0%,100% { transform: translateY(0); }
+  50%      { transform: translateY(-6px); }
+}
+
 
 /* =====================================================================
    Responsive
    ===================================================================== */
 @media (max-width: 1024px) {
-  #root {
-    padding: 24px 18px 20px;
-    margin: 12px auto;
-  }
-
-  h1 {
-    font-size: 32px;
-  }
-
-  form {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  form > * {
-    width: 100%;
-  }
-
-  button {
-    padding: 10px 18px;
-  }
-
-  pre {
-    max-height: 420px;
-    font-size: 0.8rem;
-  }
-
-  #root section {
-    padding: 22px 18px 20px;
-  }
+  #root { padding: 24px 18px 20px; margin: 12px auto; }
+  h1 { font-size: 32px; }
+  form { flex-direction: column; align-items: stretch; }
+  form > * { width: 100%; }
+  button { padding: 10px 18px; }
+  pre { max-height: 420px; font-size: 0.8rem; }
+  #root section { padding: 22px 18px 20px; }
 }
 
 @media (max-width: 560px) {
@@ -1584,38 +1317,607 @@ code {
     padding: 18px 12px 16px;
     border-radius: var(--radius-xl);
   }
-  h2 {
-    font-size: 1.18rem;
-    flex-wrap: wrap;
-  }
-  button {
-    padding: 10px 15px;
-  }
-  #root section {
-    padding: 18px 12px 16px;
-    border-radius: var(--radius-lg);
-  }
+  h2 { font-size: 1.18rem; flex-wrap: wrap; }
+  button { padding: 10px 15px; }
+  #root section { padding: 18px 12px 16px; border-radius: var(--radius-lg); }
 }
 
 /* =====================================================================
-   Reduced motion — respect user preference
+   Reduced motion
    ===================================================================== */
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
+  *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+  body::before, body::after { animation: none !important; }
+  #root { animation: none; }
+}
 
-  body::before,
-  body::after {
-    animation: none !important;
+/* Auth portal styles are in Auth.css */
+/* When auth shell is mounted inside the fixed wrapper, neutralise #root */
+#root:has(.auth-shell) {
+  all: unset !important;
+  display: block !important;
+}
+
+body:has(#root > div[style*="min-height:100vh"][style*="background:#f5f7fb"]) {
+  background: #04060e;
+}
+
+body:has(#root > div[style*="min-height:100vh"][style*="background:#f5f7fb"]) #root {
+  width: 100%; max-width: 100%; min-height: 100svh;
+  margin: 0; padding: 0; border: 0; border-radius: 0;
+  background: transparent; box-shadow: none;
+  backdrop-filter: none; animation: none;
+}
+
+body:has(#root > div[style*="min-height:100vh"][style*="background:#f5f7fb"]) #root::before,
+body:has(#root > div[style*="min-height:100vh"][style*="background:#f5f7fb"]) #root::after {
+  display: none;
+}
+
+/* ---------- 1 · Shell ---------- */
+#root > div[style*="min-height:100vh"][style*="background:#f5f7fb"] {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  perspective: 1300px;
+  background:
+    radial-gradient(1200px 820px at 8% 4%,   rgba(124,92,255,0.32), transparent 62%),
+    radial-gradient(1050px 780px at 94% 18%,  rgba(34,211,238,0.26), transparent 62%),
+    radial-gradient(900px  680px at 45% 118%, rgba(255,95,162,0.20), transparent 62%),
+    repeating-linear-gradient(0deg,   rgba(148,163,230,0.032) 0 1px, transparent 1px 120px),
+    repeating-linear-gradient(90deg,  rgba(148,163,230,0.032) 0 1px, transparent 1px 120px),
+    linear-gradient(162deg, #04060e 0%, #080c1e 48%, #0b0f28 100%) !important;
+  box-shadow: inset 0 0 200px rgba(0,0,0,0.55);
+}
+
+#root > div[style*="min-height:100vh"][style*="background:#f5f7fb"]::before {
+  content: "";
+  position: absolute;
+  inset: -18%;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(660px 500px at 26% 28%, rgba(143,107,255,0.44), transparent 70%),
+    radial-gradient(760px 560px at 80% 62%, rgba(34,211,238,0.34), transparent 70%),
+    radial-gradient(560px 480px at 62% 96%, rgba(255,95,162,0.26), transparent 70%);
+  animation: vault-blobs 34s ease-in-out infinite;
+}
+
+#root > div[style*="min-height:100vh"][style*="background:#f5f7fb"]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(circle, rgba(255,255,255,0.62) 1px, transparent 1.3px),
+    radial-gradient(circle, rgba(114,137,218,0.52) 1px, transparent 1.3px),
+    radial-gradient(circle, rgba(34,211,238,0.46)  1px, transparent 1.3px),
+    linear-gradient(115deg, transparent 35%, rgba(255,255,255,0.88) 46%, transparent 62%);
+  background-size: 230px 230px, 480px 480px, 720px 720px, 150px 2px;
+  background-repeat: repeat, repeat, repeat, no-repeat;
+  background-position: 0 0, 130px 90px, 260px 200px, 135% 16%;
+  animation: vault-meteor 9s linear infinite, star-twinkle 5.5s ease-in-out infinite;
+}
+
+/* ---------- 2 · Glass card ---------- */
+#root > div[style*="min-height:100vh"][style*="background:#f5f7fb"] > div[style*="width:380px"] {
+  position: relative;
+  z-index: 1;
+  width: 428px !important;
+  max-width: 92% !important;
+  padding: 44px 36px 32px !important;
+  border-radius: 28px !important;
+  background:
+    radial-gradient(120% 45% at 50% 0%, rgba(124,92,255,0.13), transparent 60%),
+    linear-gradient(168deg, rgba(13,18,44,0.95), rgba(6,9,22,0.97)) !important;
+  border: none !important;
+  box-shadow:
+    0 34px 84px -24px rgba(2,4,16,0.92),
+    0 0 0 1px rgba(34,211,238,0.09),
+    0 0 68px rgba(124,92,255,0.36),
+    inset 0 1px 0 rgba(255,255,255,0.07);
+  backdrop-filter: blur(20px) saturate(1.5);
+  -webkit-backdrop-filter: blur(20px) saturate(1.5);
+  transition: box-shadow 0.45s ease;
+  animation:
+    card-enter 0.95s cubic-bezier(0.16, 1, 0.3, 1) both,
+    card-hover 7s ease-in-out 1.2s infinite;
+}
+
+/* rotating conic border */
+#root > div[style*="min-height:100vh"][style*="background:#f5f7fb"] > div[style*="width:380px"]::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 2px;
+  pointer-events: none;
+  background: conic-gradient(from var(--vault-angle),
+    #8f6bff 0%, #22d3ee 22%, #ff5fa2 44%, #8f6bff 68%, #22d3ee 90%, #8f6bff 100%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  filter: drop-shadow(0 0 16px rgba(124,92,255,0.58));
+  animation: vault-frame 8s linear infinite;
+}
+
+/* ambient sheen + corner dots */
+#root > div[style*="min-height:100vh"][style*="background:#f5f7fb"] > div[style*="width:380px"]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background-image:
+    radial-gradient(7px 7px at calc(100% - 22px) 22px, rgba(34,211,238,0.95), transparent 70%),
+    radial-gradient(7px 7px at 22px calc(100% - 22px), rgba(255,95,162,0.78), transparent 70%),
+    linear-gradient(115deg, transparent 32%, rgba(255,255,255,0.06) 46%, rgba(255,255,255,0.14) 50%, transparent 64%);
+  background-size: 7px 7px, 7px 7px, 260% 100%;
+  background-repeat: no-repeat, no-repeat, no-repeat;
+  animation: vault-sheen 6.8s ease-in-out infinite;
+}
+
+#root > div[style*="min-height:100vh"][style*="background:#f5f7fb"] > div[style*="width:380px"]:hover {
+  box-shadow:
+    0 40px 94px -26px rgba(2,4,16,0.94),
+    0 0 0 1px rgba(34,211,238,0.16),
+    0 0 88px rgba(124,92,255,0.48),
+    inset 0 1px 0 rgba(255,255,255,0.09);
+}
+
+#root > div[style*="min-height:100vh"][style*="background:#f5f7fb"] > div[style*="width:380px"]:has(form > div) {
+  box-shadow:
+    0 32px 80px -24px rgba(2,4,16,0.9),
+    0 0 0 1px rgba(255,95,129,0.36),
+    0 0 62px rgba(255,95,129,0.30),
+    inset 0 1px 0 rgba(255,255,255,0.07);
+}
+
+/* ---------- 3 · Emblem + typing title ---------- */
+#root > div[style*="min-height:100vh"][style*="background:#f5f7fb"] > div[style*="width:380px"] > h1 {
+  white-space: nowrap;
+  overflow: hidden;
+  width: 24ch;
+  max-width: 100%;
+  margin: 0 auto 4px !important;
+  padding-right: 2px;
+  border-right: 2px solid transparent;
+  font: 800 1.46rem/1.2 var(--font-head);
+  text-align: center;
+  color: transparent;
+  background: linear-gradient(100deg, #a78bfa 0%, #8f6bff 24%, #22d3ee 52%, #ff5fa2 80%, #a78bfa 100%);
+  background-size: 260% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 6px 22px rgba(124,92,255,0.42));
+  animation:
+    typing 1.8s steps(24, end) 0.45s both,
+    caret-blink 1s step-end 2.25s infinite,
+    hue-drift 7s linear 2.25s infinite;
+}
+
+#root > div[style*="min-height:100vh"][style*="background:#f5f7fb"] > div[style*="width:380px"] > h1::before {
+  content: "";
+  display: block;
+  width: 58px; height: 58px;
+  margin: 0 auto 18px;
+  border-radius: 50%;
+  border: 6px solid transparent;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(34,211,238,0.88) 0 2px, transparent 4px) padding-box,
+    linear-gradient(rgba(8,11,28,0.97), rgba(8,11,28,0.97)) padding-box,
+    conic-gradient(from var(--vault-angle),
+      #8f6bff 0%, #22d3ee 22%, #ff5fa2 44%, #8f6bff 68%, #22d3ee 90%, #8f6bff 100%) border-box;
+  filter: drop-shadow(0 4px 18px rgba(124,92,255,0.52));
+  animation:
+    emblem-in 0.7s cubic-bezier(0.16, 1, 0.3, 1) both,
+    vault-frame 5s linear 0.5s infinite;
+}
+
+#root > div[style*="min-height:100vh"][style*="background:#f5f7fb"] > div[style*="width:380px"] > h1::after {
+  content: "";
+  display: block;
+  width: 88px; height: 3px;
+  margin: 14px auto 0;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #8f6bff, #22d3ee, #ff5fa2);
+  background-size: 200% 100%;
+  box-shadow: 0 0 16px rgba(124,92,255,0.42);
+  transform: scaleX(0);
+  transform-origin: center;
+  animation:
+    divider-in 0.7s cubic-bezier(0.16, 1, 0.3, 1) 2.35s both,
+    hr-flow 4s linear 3.05s infinite;
+}
+
+#root > div[style*="min-height:100vh"][style*="background:#f5f7fb"] > div[style*="width:380px"] > p {
+  margin: 14px 0 18px !important;
+  color: #9db4dd !important;
+  font-size: 0.93rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-align: center;
+  animation: fade-up 0.6s ease 0.2s both;
+}
+
+#root > div[style*="min-height:100vh"][style*="background:#f5f7fb"] > div[style*="width:380px"] > p::before {
+  content: "";
+  display: inline-block;
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  margin-right: 8px;
+  vertical-align: middle;
+  background: #22d3ee;
+  box-shadow: 0 0 10px rgba(34,211,238,0.85);
+  animation: orb-pulse 1.6s ease-in-out infinite;
+}
+
+/* ---------- 4 · Glass form ---------- */
+#root > div[style*="min-height:100vh"][style*="background:#f5f7fb"] > div[style*="width:380px"] > form {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 14px;
+  margin: 0 !important;
+  border: none !important;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+
+/* ---------- 5 · Neon fields ---------- */
+#root > div[style*="min-height:100vh"][style*="background:#f5f7fb"] > div[style*="width:380px"] form input[type="text"],
+#root > div[style*="min-height:100vh"][style*="background:#f5f7fb"] > div[style*="width:380px"] form input[type="email"],
+#root > div[style*="min-height:100vh"][style*="background:#f5f7fb"] > div[style*="width:380px"] form input[type="password"] {
+  height: 50px;
+  width: 100% !important;
+  padding: 13px 16px 13px 46px !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+  border-radius: 14px;
+  border: 1px solid rgba(148,163,230,0.22);
+  background-color: rgba(6,9,22,0.62);
+  background-repeat: no-repeat;
+  background-position: 15px 50%;
+  background-size: 18px 18px;
+  color: #eef2ff;
+  caret-color: #22d3ee;
+  outline: none;
+  transition: border-color 0.22s, box-shadow 0.3s, background-color 0.3s, transform 0.25s;
+  animation: field-in 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+#root > div[style*="min-height:100vh"][style*="background:#f5f7fb"] > div[style*="width:380px"] form input[type="text"] {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%23939bbd' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'/%3E%3Ccircle cx='12' cy='7' r='4'/%3E%3C/svg%3E");
+  animation-delay: 0.1s;
+}
+
+#root > div[style*="min-height:100vh"][style*="background:#f5f7fb"] > div[style*="width:380px"] form input[type="email"] {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%23939bbd' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect width='20' height='16' x='2' y='4' rx='2'/%3E%3Cpath d='m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7'/%3E%3C/svg%3E");
+  animation-delay: 0.18s;
+}
+
+#root > div[style*="min-height:100vh"][style*="background:#f5f7fb"] > div[style*="width:380px"] form input[type="password"] {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%23939bbd' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect width='18' height='11' x='3' y='11' rx='2' ry='2'/%3E%3Cpath d='M7 11V7a5 5 0 0 1 10 0v4'/%3E%3C/svg%3E");
+  animation-delay: 0.26s;
+}
+
+#root > div[style*="min-height:100vh"][style*="background:#f5f7fb"] > div[style*="width:380px"] form input[type="text"]:focus {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%2322d3ee' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'/%3E%3Ccircle cx='12' cy='7' r='4'/%3E%3C/svg%3E");
+}
+
+#root > div[style*="min-height:100vh"][style*="background:#f5f7fb"] > div[style*="width:380px"] form input[type="email"]:focus {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%2322d3ee' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect width='20' height='16' x='2' y='4' rx='2'/%3E%3Cpath d='m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7'/%3E%3C/svg%3E");
+}
+
+#root > div[style*="min-height:100vh"][style*="background:#f5f7fb"] > div[style*="width:380px"] form input[type="password"]:focus {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%2322d3ee' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect width='18' height='11' x='3' y='11' rx='2' ry='2'/%3E%3Cpath d='M7 11V7a5 5 0 0 1 10 0v4'/%3E%3C/svg%3E");
+}
+
+#root > div[style*="min-height:100vh"][style*="background:#f5f7fb"] > div[style*="width:380px"] form input[type="text"]:focus,
+#root > div[style*="min-height:100vh"][style*="background:#f5f7fb"] > div[style*="width:380px"] form input[type="email"]:focus,
+#root > div[style*="min-height:100vh"][style*="background:#f5f7fb"] > div[style*="width:380px"] form input[type="password"]:focus {
+  border-color: rgba(34,211,238,0.78);
+  background-color: rgba(8,12,32,0.82);
+  box-shadow:
+    0 0 0 3px rgba(124,92,255,0.20),
+    0 0 28px rgba(34,211,238,0.24),
+    inset 0 1px 0 rgba(255,255,255,0.06);
+  transform: translateY(-1px);
+}
+
+#root > div[style*="min-height:100vh"][style*="background:#f5f7fb"] > div[style*="width:380px"] form input:not(:placeholder-shown):valid {
+  border-color: rgba(74,222,128,0.52);
+  box-shadow:
+    0 0 0 3px rgba(74,222,128,0.11),
+    0 0 20px rgba(74,222,128,0.18),
+    inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+#root > div[style*="min-height:100vh"][style*="background:#f5f7fb"] > div[style*="width:380px"] form input:not(:placeholder-shown):invalid {
+  border-color: rgba(255,111,138,0.62);
+  box-shadow:
+    0 0 0 3px rgba(255,111,138,0.13),
+    0 0 22px rgba(255,111,138,0.22);
+}
+
+#root > div[style*="min-height:100vh"][style*="background:#f5f7fb"] > div[style*="width:380px"] form input::placeholder {
+  color: rgba(148,163,230,0.55);
+  font-weight: 500;
+  opacity: 1;
+  transition: color 0.3s;
+}
+
+#root > div[style*="min-height:100vh"][style*="background:#f5f7fb"] > div[style*="width:380px"] form input:focus::placeholder {
+  color: rgba(34,211,238,0.65);
+}
+
+#root > div[style*="min-height:100vh"][style*="background:#f5f7fb"] > div[style*="width:380px"] form input[type="text"]:-webkit-autofill,
+#root > div[style*="min-height:100vh"][style*="background:#f5f7fb"] > div[style*="width:380px"] form input[type="email"]:-webkit-autofill,
+#root > div[style*="min-height:100vh"][style*="background:#f5f7fb"] > div[style*="width:380px"] form input[type="password"]:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0 30px rgba(6,9,22,0.92) inset;
+  -webkit-text-fill-color: #eef2ff;
+  caret-color: #22d3ee;
+  transition: background-color 9999s ease-out 0s;
+}
+
+/* ---------- 6 · Error chip ---------- */
+#root > div[style*="min-height:100vh"][style*="background:#f5f7fb"] > div[style*="width:380px"] form > div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 !important;
+  padding: 9px 14px;
+  border-radius: 11px;
+  background: rgba(220,38,38,0.13);
+  border: 1px solid rgba(255,107,107,0.42);
+  color: #ff8f9f !important;
+  font-size: 0.88rem;
+  text-align: left;
+  animation: err-shake 0.5s ease both;
+}
+
+#root > div[style*="min-height:100vh"][style*="background:#f5f7fb"] > div[style*="width:380px"] form > div::before {
+  content: "\26A0";
+  font-size: 0.95rem;
+  filter: drop-shadow(0 0 6px rgba(255,95,95,0.62));
+}
+
+/* ---------- 7 · Submit CTA ---------- */
+#root > div[style*="min-height:100vh"][style*="background:#f5f7fb"] > div[style*="width:380px"] > form > button[type="submit"] {
+  position: relative;
+  overflow: hidden;
+  width: 100% !important;
+  margin: 2px 0 0 !important;
+  padding: 15px 16px !important;
+  border-radius: 14px;
+  border: 1px solid rgba(143,107,255,0.46);
+  font: 800 0.96rem/1 var(--font-head);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #ffffff;
+  background: linear-gradient(115deg, #8f6bff 0%, #704ce8 30%, #22d3ee 58%, #ff5fa2 85%, #8f6bff 100%);
+  background-size: 250% 100%;
+  box-shadow:
+    0 0 0 1px rgba(143,107,255,0.36),
+    0 14px 38px -10px rgba(124,92,255,0.62),
+    0 0 28px rgba(34,211,238,0.30);
+  animation:
+    hue-drift 5s linear infinite,
+    submit-glow 3.2s ease-in-out infinite;
+  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), filter 0.3s;
+  cursor: pointer;
+}
+
+#root > div[style*="min-height:100vh"][style*="background:#f5f7fb"] > div[style*="width:380px"] > form > button[type="submit"]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(115deg, transparent 25%, rgba(255,255,255,0.30) 50%, transparent 75%);
+  background-size: 250% 100%;
+  background-position: 150% 0;
+  animation: shine-sweep 3.6s ease-in-out infinite;
+}
+
+#root > div[style*="min-height:100vh"][style*="background:#f5f7fb"] > div[style*="width:380px"] > form > button[type="submit"]:hover:not(:disabled) {
+  transform: translateY(-2px) scale(1.016);
+  filter: brightness(1.13) saturate(1.12);
+}
+
+#root > div[style*="min-height:100vh"][style*="background:#f5f7fb"] > div[style*="width:380px"] > form > button[type="submit"]:active:not(:disabled) {
+  transform: translateY(0) scale(0.98);
+}
+
+#root > div[style*="min-height:100vh"][style*="background:#f5f7fb"] > div[style*="width:380px"] > form > button[type="submit"]:disabled {
+  animation: btn-load 1.1s ease-in-out infinite;
+  border-color: rgba(143,107,255,0.3);
+  opacity: 0.88;
+  cursor: not-allowed !important;
+}
+
+#root > div[style*="min-height:100vh"][style*="background:#f5f7fb"] > div[style*="width:380px"] > form > button[type="submit"]:disabled::before {
+  content: "";
+  display: inline-block;
+  width: 11px; height: 11px;
+  margin-right: 9px;
+  vertical-align: -1px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  border-top-color: rgba(255,255,255,0.9);
+  border-right-color: rgba(255,255,255,0.9);
+  animation: ring-spin 0.9s linear infinite;
+}
+
+/* ---------- 8 · Toggle pill ---------- */
+#root > div[style*="min-height:100vh"][style*="background:#f5f7fb"] > div[style*="width:380px"] > button[type="button"] {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100% !important;
+  margin: 18px auto 2px !important;
+  padding: 10px 0 !important;
+  color: #9db4dd !important;
+  background: rgba(124,92,255,0.07) !important;
+  border: 1px solid rgba(124,92,255,0.22) !important;
+  border-radius: 999px;
+  font: 600 0.86rem var(--font-sans);
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: color 0.25s, transform 0.2s, border-color 0.25s, background-color 0.25s, box-shadow 0.3s;
+  animation: fade-up 0.6s ease 0.5s both;
+}
+
+#root > div[style*="min-height:100vh"][style*="background:#f5f7fb"] > div[style*="width:380px"] > button[type="button"]::before {
+  content: "\21C4";
+  font-size: 1rem;
+  background: linear-gradient(135deg, #8f6bff, #22d3ee);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 6px rgba(124,92,255,0.62));
+}
+
+#root > div[style*="min-height:100vh"][style*="background:#f5f7fb"] > div[style*="width:380px"] > button[type="button"]::after {
+  content: "";
+  position: absolute;
+  left: 22%; right: 22%;
+  bottom: 3px;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, rgba(34,211,238,0.72), rgba(124,92,255,0.72));
+  background-size: 200% 100%;
+  animation: hr-flow 3.2s linear infinite;
+}
+
+#root > div[style*="min-height:100vh"][style*="background:#f5f7fb"] > div[style*="width:380px"] > button[type="button"]:hover {
+  color: #ffffff !important;
+  transform: translateY(-1px);
+  border-color: rgba(34,211,238,0.52) !important;
+  background-color: rgba(124,92,255,0.14) !important;
+  box-shadow: 0 8px 26px -8px rgba(124,92,255,0.48);
+}
+
+#root > div[style*="min-height:100vh"][style*="background:#f5f7fb"] > div[style*="width:380px"] > button[type="button"]:active {
+  transform: translateY(0) scale(0.98);
+}
+
+/* ---------- 9 · Auth keyframes ---------- */
+@keyframes vault-blobs {
+  0%,100% { transform: translate(0,0) scale(1); }
+  33%      { transform: translate(-60px,50px) scale(1.15); }
+  66%      { transform: translate(70px,-60px) scale(0.9); }
+}
+
+@keyframes vault-meteor {
+  0%   { background-position: 0 0, 130px 90px, 260px 200px, 135% 16%; }
+  14%  { background-position: 0 0, 130px 90px, 260px 200px, 135% 16%; }
+  34%  { background-position: 0 0, 130px 90px, 260px 200px, -45% 88%; }
+  100% { background-position: 0 0, 130px 90px, 260px 200px, -45% 88%; }
+}
+
+@keyframes vault-frame { to { --vault-angle: 360deg; } }
+
+@keyframes card-enter {
+  0%   { opacity: 0; transform: translateY(60px) scale(0.82) rotateX(16deg); filter: blur(10px); }
+  60%  { opacity: 1; transform: translateY(-8px) scale(1.02) rotateX(-4deg); filter: blur(0); }
+  100% { opacity: 1; transform: none; filter: blur(0); }
+}
+
+@keyframes card-hover {
+  0%,100% { transform: rotateX(2deg) rotateY(-2deg) translateY(0); }
+  50%      { transform: rotateX(-2deg) rotateY(2deg) translateY(-6px); }
+}
+
+@keyframes emblem-in {
+  0%   { opacity: 0; transform: scale(0); }
+  70%  { opacity: 1; transform: scale(1.12); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes typing {
+  from { width: 0; }
+  to   { width: 24ch; }
+}
+
+@keyframes caret-blink {
+  0%,60%  { border-color: rgba(34,211,238,0.9); }
+  61%,100% { border-color: transparent; }
+}
+
+@keyframes divider-in {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+
+@keyframes field-in {
+  from { opacity: 0; transform: translateY(14px) scale(0.97); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes btn-load {
+  0%,100% { opacity: 0.8; }
+  50%      { opacity: 1; }
+}
+
+@keyframes err-shake {
+  0%   { opacity: 0; transform: translateX(-10px); }
+  24%  { opacity: 1; transform: translateX(8px); }
+  47%  { transform: translateX(-5px); }
+  70%  { transform: translateX(3px); }
+  88%  { transform: translateX(-2px); }
+  100% { transform: none; }
+}
+
+@keyframes vault-sheen {
+  0%,42%,100% { background-position: 0 0, 0 0, 150% 0; }
+  60%,76%     { background-position: 0 0, 0 0, -150% 0; }
+}
+
+/* ---------- 10 · Auth responsive ---------- */
+@media (max-width: 560px) {
+  #root > div[style*="min-height:100vh"][style*="background:#f5f7fb"] > div[style*="width:380px"] {
+    padding: 30px 22px 24px !important;
+    width: 96% !important;
   }
-
-  #root {
-    animation: none;
+  #root > div[style*="min-height:100vh"][style*="background:#f5f7fb"] > div[style*="width:380px"] > h1 {
+    font-size: 1.2rem;
+  }
+  #root > div[style*="min-height:100vh"][style*="background:#f5f7fb"] > div[style*="width:380px"] > h1::before {
+    width: 46px; height: 46px;
+    border-width: 5px;
+    margin-bottom: 14px;
   }
 }
 
+/* =====================================================================
+   Chat section — strip all global card panel styles
+   ===================================================================== */
+#chat-section,
+#chat-section:hover {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  backdrop-filter: none !important;
+  animation: none !important;
+  transform: none !important;
+  overflow: visible !important;
+}
+
+#chat-section::before,
+#chat-section::after {
+  display: none !important;
+}

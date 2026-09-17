@@ -5,6 +5,8 @@ from database.database import SessionLocal
 from models.project import Project
 from models.code_file import CodeFile
 from models.code_relationship import CodeRelationship
+from models.user import User
+from services.auth_dependency import get_current_user
 
 
 router = APIRouter(
@@ -29,12 +31,16 @@ def get_db():
 @router.get("/project/{project_id}")
 def get_project_relationships(
     project_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
-    # Check project
+    # Check project ownership
     project = (
         db.query(Project)
-        .filter(Project.id == project_id)
+        .filter(
+            Project.id == project_id,
+            Project.user_id == current_user.id
+        )
         .first()
     )
 
@@ -59,8 +65,7 @@ def get_project_relationships(
         source_file = (
             db.query(CodeFile)
             .filter(
-                CodeFile.id
-                == relationship.source_file_id
+                CodeFile.id == relationship.source_file_id
             )
             .first()
         )
@@ -68,8 +73,7 @@ def get_project_relationships(
         target_file = (
             db.query(CodeFile)
             .filter(
-                CodeFile.id
-                == relationship.target_file_id
+                CodeFile.id == relationship.target_file_id
             )
             .first()
         )

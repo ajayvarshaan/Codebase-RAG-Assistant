@@ -3,7 +3,9 @@ from sqlalchemy.orm import Session
 
 from database.database import SessionLocal
 from models.project import Project
+from models.user import User
 
+from services.auth_dependency import get_current_user
 from services.code_search_service import search_codebase
 
 
@@ -26,12 +28,20 @@ def get_db():
 def search_project_code(
     project_id: int,
     query: str,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
+
+    # ---------------------------------------------------------
+    # Check project ownership
+    # ---------------------------------------------------------
 
     project = (
         db.query(Project)
-        .filter(Project.id == project_id)
+        .filter(
+            Project.id == project_id,
+            Project.user_id == current_user.id
+        )
         .first()
     )
 
@@ -41,11 +51,21 @@ def search_project_code(
             detail="Project not found"
         )
 
+
+    # ---------------------------------------------------------
+    # Search project code
+    # ---------------------------------------------------------
+
     results = search_codebase(
         db=db,
         project_id=project_id,
         query=query
     )
+
+
+    # ---------------------------------------------------------
+    # Return result
+    # ---------------------------------------------------------
 
     return {
         "project_id": project_id,

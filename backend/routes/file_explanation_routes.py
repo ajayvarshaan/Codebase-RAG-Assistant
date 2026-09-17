@@ -4,7 +4,9 @@ from sqlalchemy.orm import Session
 from database.database import SessionLocal
 from models.project import Project
 from models.code_file import CodeFile
+from models.user import User
 
+from services.auth_dependency import get_current_user
 from services.file_explanation_service import generate_file_explanation
 
 
@@ -27,15 +29,19 @@ def get_db():
 def explain_file(
     project_id: int,
     file_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
 
-    # Check project
+    # ---------------------------------------------------------
+    # Check project ownership
+    # ---------------------------------------------------------
 
     project = (
         db.query(Project)
         .filter(
-            Project.id == project_id
+            Project.id == project_id,
+            Project.user_id == current_user.id
         )
         .first()
     )
@@ -47,7 +53,9 @@ def explain_file(
         )
 
 
+    # ---------------------------------------------------------
     # Check file
+    # ---------------------------------------------------------
 
     code_file = (
         db.query(CodeFile)
@@ -65,7 +73,9 @@ def explain_file(
         )
 
 
+    # ---------------------------------------------------------
     # Generate AI explanation
+    # ---------------------------------------------------------
 
     explanation = generate_file_explanation(
         db=db,
@@ -73,6 +83,10 @@ def explain_file(
         project_id=project_id
     )
 
+
+    # ---------------------------------------------------------
+    # Return result
+    # ---------------------------------------------------------
 
     return {
         "project_id": project_id,

@@ -6,13 +6,18 @@ export async function askQuestion(
     content: string;
   }[] = []
 ) {
+  const token = localStorage.getItem("token");
+
   const response = await fetch(
     `http://127.0.0.1:8000/chat/project/${projectId}`,
     {
       method: "POST",
+
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
       },
+
       body: JSON.stringify({
         question: question,
         top_k: 3,
@@ -22,7 +27,11 @@ export async function askQuestion(
   );
 
   if (!response.ok) {
-    throw new Error("Failed to get answer");
+    const errorData = await response.json().catch(() => null);
+
+    throw new Error(
+      errorData?.detail || "Failed to get answer"
+    );
   }
 
   return response.json();
