@@ -70,6 +70,7 @@ from routes.test_runner_routes import (
 )
 
 from routes.github_routes import router as github_router
+from routes.ai_result_routes import router as ai_result_router
 # =========================================================
 # Database
 # =========================================================
@@ -86,6 +87,7 @@ from models.code_file import CodeFile
 from models.code_chunk import CodeChunk
 from models.code_relationship import CodeRelationship
 from models.user import User
+from models.ai_result import AIResult
 
 Base.metadata.create_all(bind=engine)
 
@@ -217,6 +219,7 @@ app.include_router(auth_router)
 app.include_router(auth_router)
 
 app.include_router(github_router)
+app.include_router(ai_result_router)
 
 # =========================================================
 # Create Database Tables

@@ -158,6 +158,7 @@ export default function Chat({
                           </div>
                           {chat.sources.length > 0 && (
                             <div className="cb-sources">
+                              <div className="cb-sources-label">📎 Sources</div>
                               {chat.sources.map((source) => (
                                 <button
                                   key={source.chunk_id}

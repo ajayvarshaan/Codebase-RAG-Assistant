@@ -101,6 +101,16 @@ type ReadmeResponse = {
 };
 
 
+type PersistedAIResult = {
+  id: number;
+  project_id: number;
+  file_id: number | null;
+  tool_name: string;
+  result_data?: any;
+  result?: any;
+};
+
+
 type FileTreeFolder = {
   name: string;
   path: string;
@@ -127,6 +137,90 @@ async function authapiFetch(
     ...init,
     headers
   });
+}
+
+
+async function saveAIResult(
+  projectId: number,
+  toolName: string,
+  result: any,
+  fileId: number | null = null
+): Promise<void> {
+  try {
+    const response = await authapiFetch(
+      `${API_BASE_URL}/ai-results/project/${projectId}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+       body: JSON.stringify({
+  tool_name: toolName,
+  file_id: fileId,
+  result: result
+})
+      }
+    );
+
+    if (!response.ok) {
+      console.error("Could not save AI result:", await response.text());
+    }
+  } catch (error) {
+    console.error("Could not save AI result:", error);
+  }
+}
+
+
+async function loadAIResults(
+  projectId: number
+): Promise<PersistedAIResult[]> {
+  const response = await authapiFetch(
+    `${API_BASE_URL}/ai-results/project/${projectId}`
+  );
+
+  if (!response.ok) {
+    throw new Error("Could not load saved AI results");
+  }
+
+  const data = await response.json();
+  return data.results || [];
+}
+
+
+async function clearAIResults(projectId: number): Promise<void> {
+  try {
+    const response = await authapiFetch(
+      `${API_BASE_URL}/ai-results/project/${projectId}`,
+      { method: "DELETE" }
+    );
+
+    if (!response.ok) {
+      console.error("Could not clear saved AI results:", await response.text());
+    }
+  } catch (error) {
+    console.error("Could not clear saved AI results:", error);
+  }
+}
+
+
+async function clearAIResult(
+  projectId: number,
+  toolName: string,
+  fileId: number | null = null
+): Promise<void> {
+  try {
+    const query = fileId === null ? "" : `?file_id=${fileId}`;
+    const response = await authapiFetch(
+      `${API_BASE_URL}/ai-results/project/${projectId}/tool/${encodeURIComponent(toolName)}${query}`,
+      { method: "DELETE" }
+    );
+
+    if (!response.ok) {
+      console.error("Could not clear saved AI result:", await response.text());
+    }
+  } catch (error) {
+    console.error("Could not clear saved AI result:", error);
+  }
 }
 
 
@@ -739,6 +833,132 @@ function App() {
 
 
   // ---------------------------------------------------------
+  // Restore persisted AI results for the selected project
+  // ---------------------------------------------------------
+
+  const restorePersistedAIResults = async (projectId: number) => {
+    try {
+      const results = await loadAIResults(projectId);
+
+      const latest = (toolName: string, fileId?: number | null) =>
+        results.find(
+          (item) =>
+            item.tool_name === toolName &&
+            (fileId === undefined || item.file_id === fileId)
+        );
+
+      const persistedData = (item: PersistedAIResult | undefined): any =>
+        item?.result_data ?? item?.result ?? {};
+
+      const makeFile = (result: PersistedAIResult | undefined): CodeFile | null => {
+        if (!result || result.file_id === null) {
+          return null;
+        }
+
+        const existing = files.find((file) => file.id === result.file_id);
+        if (existing) {
+          return existing;
+        }
+
+        const persisted = persistedData(result);
+        return {
+          id: result.file_id,
+          project_id: projectId,
+          file_path: persisted.file_path || "Saved file",
+          content: ""
+        };
+      };
+
+      const architecture = latest("architecture");
+      if (architecture) {
+        setArchitectureSummary(persistedData(architecture)?.summary || persistedData(architecture) || "");
+        setArchitectureMessage("");
+        setShowArchitectureSummary(true);
+      }
+
+      const readmeResult = latest("readme");
+      if (readmeResult) {
+        setReadme(persistedData(readmeResult)?.readme || persistedData(readmeResult) || "");
+        setReadmeMessage("");
+        setShowReadme(true);
+      }
+
+      const chat = latest("chat_history");
+      if (chat && Array.isArray(persistedData(chat))) {
+        setChatHistory(persistedData(chat));
+      }
+
+      const search = latest("code_search");
+      if (search) {
+        setSearchQuery(persistedData(search)?.query || "");
+        setSearchResults(persistedData(search)?.results || []);
+        setSearchMessage(persistedData(search)?.message || "");
+      }
+
+      const diff = latest("code_diff");
+      if (diff) {
+        setDiffFileName(persistedData(diff)?.file_name || "");
+        setOldCode(persistedData(diff)?.old_code || "");
+        setNewCode(persistedData(diff)?.new_code || "");
+        setDiffAnalysis(persistedData(diff)?.analysis || "");
+        setDiffMessage("");
+      }
+
+      const impact = results.find((item) => item.tool_name === "impact");
+      if (impact) {
+        setImpactFile(makeFile(impact));
+        setAffectedFiles(persistedData(impact)?.affected_files || []);
+        setImpactExplanation(persistedData(impact)?.explanation || "");
+        setImpactMessage("");
+      }
+
+      const explanation = results.find((item) => item.tool_name === "file_explanation");
+      if (explanation) {
+        setExplanationFile(makeFile(explanation));
+        setFileExplanation(persistedData(explanation)?.explanation || persistedData(explanation) || "");
+        setFileExplanationMessage("");
+      }
+
+      const review = results.find((item) => item.tool_name === "code_review");
+      if (review) {
+        setReviewFile(makeFile(review));
+        setCodeReview(persistedData(review)?.review || persistedData(review) || "");
+        setCodeReviewMessage("");
+      }
+
+      const tests = results.find((item) => item.tool_name === "test_generation");
+      if (tests) {
+        setTestFile(makeFile(tests));
+        setTestCases(persistedData(tests)?.test_cases || persistedData(tests) || "");
+        setTestCasesMessage("");
+      }
+
+      const runner = latest("test_runner");
+      if (runner) {
+        setGeneratedTestResult(persistedData(runner));
+        setGeneratedTestMessage("");
+      }
+
+      const fix = results.find((item) => item.tool_name === "code_fix");
+      if (fix) {
+        setFixFile(makeFile(fix));
+        setCodeFix(persistedData(fix)?.fix || persistedData(fix) || "");
+        setCodeFixMessage("");
+      }
+
+      const documentationResult = results.find((item) => item.tool_name === "documentation");
+      if (documentationResult) {
+        setDocumentationFile(makeFile(documentationResult));
+        setDocumentation(persistedData(documentationResult)?.documentation || persistedData(documentationResult) || "");
+        setDocumentationMessage("");
+      }
+    } catch (error) {
+      console.error("Failed to restore saved AI results:", error);
+    }
+  };
+
+
+  // ---------------------------------------------------------
   // Load files and relationships when project changes
   // ---------------------------------------------------------
 
@@ -893,6 +1113,10 @@ function App() {
        setNewCode("");
        setDiffAnalysis("");
        setDiffMessage("");
+       setGeneratedTestResult(null);
+       setGeneratedTestMessage("");
+
+       void restorePersistedAIResults(selectedProjectId);
 
   }, [selectedProjectId, currentUser]);
 
@@ -1050,6 +1274,16 @@ function App() {
       );
 
       setImpactMessage("");
+      await saveAIResult(
+        selectedProjectId,
+        "impact",
+        {
+          file_path: file.file_path,
+          affected_files: impactData.affected_files || [],
+          explanation: explanationData.explanation || ""
+        },
+        file.id
+      );
 
     } catch (error) {
 
@@ -1110,6 +1344,12 @@ function App() {
       );
 
       setFileExplanationMessage("");
+      await saveAIResult(
+        selectedProjectId,
+        "file_explanation",
+        { file_path: file.file_path, explanation: data.explanation || "" },
+        file.id
+      );
 
     } catch (error) {
 
@@ -1170,6 +1410,12 @@ function App() {
       );
 
       setCodeReviewMessage("");
+      await saveAIResult(
+        selectedProjectId,
+        "code_review",
+        { file_path: file.file_path, review: data.review || "" },
+        file.id
+      );
 
     } catch (error) {
 
@@ -1225,6 +1471,12 @@ function App() {
       );
 
       setTestCasesMessage("");
+      await saveAIResult(
+        selectedProjectId,
+        "test_generation",
+        { file_path: file.file_path, test_cases: data.test_cases || "" },
+        file.id
+      );
 
     } catch (error) {
 
@@ -1290,6 +1542,11 @@ function App() {
 
       setGeneratedTestResult(data);
       setGeneratedTestMessage("");
+      await saveAIResult(
+        selectedProjectId,
+        "test_runner",
+        data
+      );
     } catch (error) {
       console.error(
         "Failed to run generated test:",
@@ -1343,6 +1600,12 @@ function App() {
 
       setCodeFix(data.fix || "");
       setCodeFixMessage("");
+      await saveAIResult(
+        selectedProjectId,
+        "code_fix",
+        { file_path: file.file_path, fix: data.fix || "" },
+        file.id
+      );
 
     } catch (error) {
 
@@ -1399,13 +1662,21 @@ function App() {
 
       setSearchResults(data.results || []);
 
-      if ((data.results || []).length === 0) {
-        setSearchMessage("No matching code found.");
-      } else {
-        setSearchMessage(
-          `${data.results.length} matching result(s) found.`
-        );
-      }
+      const resultMessage = (data.results || []).length === 0
+        ? "No matching code found."
+        : `${data.results.length} matching result(s) found.`;
+
+      setSearchMessage(resultMessage);
+
+      await saveAIResult(
+        selectedProjectId,
+        "code_search",
+        {
+          query: searchQuery.trim(),
+          results: data.results || [],
+          message: resultMessage
+        }
+      );
 
     } catch (error) {
 
@@ -1476,6 +1747,16 @@ function App() {
 
       setDiffAnalysis(data.analysis || "");
       setDiffMessage("");
+      await saveAIResult(
+        selectedProjectId,
+        "code_diff",
+        {
+          file_name: diffFileName.trim() || "Selected file",
+          old_code: oldCode,
+          new_code: newCode,
+          analysis: data.analysis || ""
+        }
+      );
 
     } catch (error) {
 
@@ -1523,6 +1804,7 @@ function App() {
       }
 
       setReadme(data.readme);
+      await saveAIResult(selectedProjectId, "readme", { readme: data.readme });
 
     } catch (error) {
 
@@ -1581,6 +1863,15 @@ function App() {
       );
 
       setDocumentationMessage("");
+      await saveAIResult(
+        selectedProjectId,
+        "documentation",
+        {
+          file_path: file.file_path,
+          documentation: data.documentation || ""
+        },
+        file.id
+      );
 
     } catch (error) {
 
@@ -1642,6 +1933,11 @@ function App() {
       );
 
       setArchitectureMessage("");
+      await saveAIResult(
+        selectedProjectId,
+        "architecture",
+        { summary: data.summary || "" }
+      );
 
     } catch (error) {
 
@@ -2213,6 +2509,8 @@ function App() {
 
       setChatMessage("");
 
+      await clearAIResults(selectedProjectId);
+
     } catch {
 
       setZipMessage(
@@ -2293,6 +2591,22 @@ function App() {
         )
       );
 
+      const persistedChatHistory: ChatMessage[] = [
+        ...chatHistory,
+        {
+          id: pendingId,
+          question: currentQuestion,
+          answer: data.answer,
+          sources: data.sources
+        }
+      ];
+
+      await saveAIResult(
+        selectedProjectId,
+        "chat_history",
+        persistedChatHistory
+      );
+
       setChatMessage("");
 
     } catch {
@@ -2320,6 +2634,10 @@ function App() {
     setChatMessage("");
 
     setSelectedSource(null);
+
+    if (selectedProjectId !== null) {
+      void clearAIResult(selectedProjectId, "chat_history");
+    }
   };
 
 
@@ -2510,6 +2828,10 @@ function App() {
     }
 
 
+    if (typeof file.content !== "string") {
+      return [];
+    }
+
     const lines =
       file.content.split("\n");
 
@@ -2530,6 +2852,55 @@ function App() {
         })
       );
   };
+
+
+  useEffect(() => {
+    if (!selectedSource || selectedProjectId === null) {
+      return;
+    }
+
+    const file = files.find(
+      (currentFile) => currentFile.id === selectedSource.file_id
+    );
+
+    if (!file || typeof file.content === "string") {
+      return;
+    }
+
+    let cancelled = false;
+
+    authapiFetch(
+      `${API_BASE_URL}/files/project/${selectedProjectId}/file/${selectedSource.file_id}`
+    )
+      .then(async (response) => {
+        if (!response.ok) {
+          throw new Error("Could not load source file");
+        }
+
+        const fullFile: CodeFile = await response.json();
+
+        if (cancelled) {
+          return;
+        }
+
+        setFiles((currentFiles) =>
+          currentFiles.map((currentFile) =>
+            currentFile.id === fullFile.id
+              ? { ...currentFile, ...fullFile }
+              : currentFile
+          )
+        );
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          console.error("Failed to load source file:", error);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedSource, selectedProjectId, files]);
 
 
   const selectedSourceCode =
